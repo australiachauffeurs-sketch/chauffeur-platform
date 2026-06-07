@@ -53,7 +53,7 @@ async function sendApprovalEmail(name: string, email: string) {
     method: "POST",
     headers: { "api-key": brevoKey, "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify({
-      sender: { name: "Elite Chauffeurs", email: "noreply@elitechauffeurs.com.au" },
+      sender: { name: "Elite Chauffeurs", email: "australiachauffeurs@gmail.com" },
       to: [{ email, name }],
       subject: "You're Approved — Elite Chauffeurs",
       htmlContent: `

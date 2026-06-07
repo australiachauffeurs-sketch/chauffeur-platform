@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: { "api-key": brevoKey, "Content-Type": "application/json" },
         body: JSON.stringify({
-          sender: { name: "Elite Chauffeurs", email: "noreply@elitechauffeurs.com.au" },
+          sender: { name: "Elite Chauffeurs", email: "australiachauffeurs@gmail.com" },
           to: [{ email: driver.email, name: driver.name }],
           subject: "Action Required: Documents Expiring Soon",
           htmlContent: `

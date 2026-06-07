@@ -17,7 +17,7 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
         "Accept": "application/json",
       },
       body: JSON.stringify({
-        sender: { name: "Elite Chauffeurs", email: "noreply@elitechauffeurs.com.au" },
+        sender: { name: "Elite Chauffeurs", email: "australiachauffeurs@gmail.com" },
         to: [{ email: payload.to }],
         subject: payload.subject,
         htmlContent: payload.html,

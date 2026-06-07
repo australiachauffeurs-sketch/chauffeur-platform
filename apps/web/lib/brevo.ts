@@ -22,7 +22,7 @@ export async function sendOTPEmail({ to, code, type, firstName }: SendOTPOptions
     return { success: false, error: "Email service not configured" };
   }
 
-  const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@elitechauffeurs.com.au";
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || "australiachauffeurs@gmail.com";
   const senderName  = process.env.BREVO_SENDER_NAME  || "Elite Chauffeurs";
 
   const subject = type === "signup"
