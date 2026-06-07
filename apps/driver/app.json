@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Elite Chauffeurs Driver",
+    "slug": "elite-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0A0A0A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.au.elitechauffeurs.driver",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to track your position for active trips.",
+        "NSLocationAlwaysUsageDescription": "We need your location in the background to track your position during active trips."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A"
+      },
+      "package": "com.au.elitechauffeurs.driver",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION"]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Elite Chauffeurs Driver to use your location for active trips."
+        }
+      ]
+    ]
+  }
+}

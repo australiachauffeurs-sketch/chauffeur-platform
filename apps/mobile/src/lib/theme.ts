@@ -1,0 +1,85 @@
+// ── Dark Theme (original) ────────────────────────────────────────────────────
+export const DARK_COLORS = {
+  // Core backgrounds
+  black:       "#0A0A0A",
+  darkSurface: "#111111",
+  darkMuted:   "#1E1E1E",
+  darkBorder:  "#2A2A2A",
+
+  // Text
+  white:   "#FFFFFF",
+  gray400: "#9CA3AF",
+  gray500: "#6B7280",
+  gray300: "#D1D5DB",
+
+  // Brand gold
+  gold:      "#C9A84C",
+  goldLight: "#E8C97A",
+  goldDark:  "#A07830",
+
+  // Status colours
+  green:  "#4ADE80",
+  red:    "#F87171",
+  blue:   "#3B82F6",
+  orange: "#FB923C",
+
+  // Utility
+  black10: "rgba(201,168,76,0.1)",
+};
+
+// ── Light Theme (white + gold) ───────────────────────────────────────────────
+export const LIGHT_COLORS = {
+  // backgrounds
+  black:        "#FFFFFF",
+  darkBg:       "#F5F3EE",
+  darkSurface:  "#FFFFFF",
+  darkMuted:    "#F0EDE6",
+  darkBorder:   "#E2D9C8",
+
+  // text
+  white:        "#1A1410",
+  gray500:      "#6B5E4E",
+  gray400:      "#8B7B6B",
+  gray300:      "#A89880",
+
+  // brand
+  gold:         "#C9A84C",
+  goldLight:    "#D4A843",
+  goldDark:     "#A8873A",
+
+  // status
+  green:        "#16A34A",
+  red:          "#DC2626",
+  blue:         "#2563EB",
+  orange:       "#D97706",
+
+  // same as dark for consistency
+  black10:      "rgba(201,168,76,0.1)",
+};
+
+// COLORS = current active theme — will be overridden by ThemeContext
+// Keep this export for files that haven't migrated yet (fallback to dark)
+export const COLORS = DARK_COLORS;
+
+export const FONTS = {
+  regular: { fontFamily: "System" },
+  medium:  { fontFamily: "System", fontWeight: "500" as const },
+  bold:    { fontFamily: "System", fontWeight: "700" as const },
+};
+
+export const SHADOWS = {
+  gold: {
+    shadowColor: "#C9A84C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  card: {
+    shadowColor: "#C9A84C",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+};

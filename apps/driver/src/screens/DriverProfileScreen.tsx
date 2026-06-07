@@ -1,0 +1,171 @@
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Switch, Alert } from "react-native";
+import { COLORS } from "../lib/theme";
+import { useTheme } from "../lib/ThemeContext";
+
+export default function DriverProfileScreen({ navigation }: any) {
+  const { colors, isDark, toggleTheme } = useTheme();
+  const [notifications, setNotifications] = useState(true);
+  const [autoAccept, setAutoAccept]       = useState(false);
+
+  const SETTINGS = [
+    { label: "Push Notifications", sub: "Job alerts & updates",    toggle: true,  val: notifications, set: setNotifications },
+    { label: "Auto-Accept Trips",   sub: "Accept within your zone", toggle: true,  val: autoAccept,    set: setAutoAccept    },
+  ];
+
+  const LINKS = [
+    { label: "Earnings",            sub: "View trip earnings & stats", screen: "Earnings" },
+    { label: "Documents",           sub: "Licence, registration",      screen: null       },
+    { label: "Bank Account",        sub: "Payout settings",            screen: null       },
+    { label: "Support",             sub: "24/7 driver helpline",       screen: null       },
+    { label: "Privacy & Security",  sub: "Account settings",           screen: null       },
+    { label: "Terms of Service",    sub: "Driver agreement",           screen: null       },
+  ];
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.black }]}>
+      <ScrollView>
+        {/* Profile */}
+        <View style={styles.profileHero}>
+          <View style={[styles.avatar, { backgroundColor: colors.darkMuted, borderColor: colors.gold }]}>
+            <Text style={[styles.avatarText, { color: colors.gold }]}>M</Text>
+          </View>
+          <Text style={[styles.name, { color: colors.white }]}>Marcus Thompson</Text>
+          <Text style={[styles.sub, { color: colors.gray500 }]}>marcus.t@driver.elitechauffeurs.com.au</Text>
+          <View style={[styles.verifiedBadge, { backgroundColor: `${colors.green}15`, borderColor: `${colors.green}40` }]}>
+            <Text style={[styles.verifiedText, { color: colors.green }]}>✓ Verified Driver</Text>
+          </View>
+        </View>
+
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          {[
+            { label: "Total Trips", value: "312"  },
+            { label: "Rating",      value: "4.98★" },
+            { label: "Acceptance",  value: "96%"  },
+          ].map((s) => (
+            <View key={s.label} style={[styles.statBox, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
+              <Text style={[styles.statValue, { color: colors.gold }]}>{s.value}</Text>
+              <Text style={[styles.statLabel, { color: colors.gray500 }]}>{s.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Vehicle card */}
+        <View style={[styles.vehicleCard, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
+          <Text style={[styles.vehicleCardTitle, { color: colors.white }]}>My Vehicle</Text>
+          {[
+            ["Make & Model", "Mercedes-Benz E-Class W213"],
+            ["Plate Number", "ABC 123"],
+            ["Year",         "2023"],
+            ["Category",     "Executive Sedan"],
+            ["Capacity",     "3 passengers"],
+          ].map(([k, v]) => (
+            <View key={k} style={[styles.vehicleRow, { borderBottomColor: colors.darkBorder }]}>
+              <Text style={[styles.vehicleKey, { color: colors.gray500 }]}>{k}</Text>
+              <Text style={[styles.vehicleVal, { color: colors.white }]}>{v}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Toggle settings */}
+        <View style={[styles.menuCard, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
+          {SETTINGS.map((s) => (
+            <View key={s.label} style={[styles.menuItem, { borderBottomColor: colors.darkBorder }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.menuLabel, { color: colors.white }]}>{s.label}</Text>
+                <Text style={[styles.menuSub, { color: colors.gray500 }]}>{s.sub}</Text>
+              </View>
+              <Switch
+                value={s.val}
+                onValueChange={s.set}
+                trackColor={{ false: colors.darkBorder, true: `${colors.gold}60` }}
+                thumbColor={s.val ? colors.gold : colors.gray500}
+              />
+            </View>
+          ))}
+
+          {/* Theme toggle */}
+          <View style={[styles.menuItem, { borderBottomWidth: 0, borderBottomColor: colors.darkBorder }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.menuLabel, { color: colors.white }]}>
+                {isDark ? "Dark Mode" : "Light Mode"}
+              </Text>
+              <Text style={[styles.menuSub, { color: colors.gray500 }]}>Switch app appearance</Text>
+            </View>
+            <Switch
+              value={!isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.darkBorder, true: `${colors.gold}60` }}
+              thumbColor={isDark ? colors.gray400 : colors.gold}
+            />
+          </View>
+        </View>
+
+        {/* Links */}
+        <View style={[styles.menuCard, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
+          {LINKS.map((l, i) => (
+            <TouchableOpacity
+              key={l.label}
+              onPress={() => l.screen && navigation?.navigate?.(l.screen)}
+              style={[styles.menuItem, { borderBottomColor: colors.darkBorder }, i === LINKS.length - 1 && { borderBottomWidth: 0 }]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.menuLabel, { color: colors.white }]}>{l.label}</Text>
+                <Text style={[styles.menuSub, { color: colors.gray500 }]}>{l.sub}</Text>
+              </View>
+              <Text style={[styles.chevron, { color: colors.gray500 }]}>›</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Sign out */}
+        <TouchableOpacity
+          style={[styles.signOutBtn, { borderColor: colors.red }]}
+          onPress={() =>
+            Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+              { text: "Cancel" },
+              { text: "Sign Out", style: "destructive", onPress: () => navigation.navigate("Login") },
+            ])
+          }
+        >
+          <Text style={[styles.signOutText, { color: colors.red }]}>Sign Out</Text>
+        </TouchableOpacity>
+        <Text style={[styles.version, { color: colors.gray500 }]}>Elite Chauffeurs Driver v1.0.0</Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container:      { flex: 1, backgroundColor: COLORS.black },
+  profileHero:    { alignItems: "center", paddingVertical: 28 },
+  avatar:         { width: 84, height: 84, borderRadius: 42, backgroundColor: COLORS.darkMuted, borderWidth: 3, borderColor: COLORS.gold, justifyContent: "center", alignItems: "center", marginBottom: 14 },
+  avatarText:     { color: COLORS.gold, fontSize: 34, fontWeight: "700" },
+  name:           { color: COLORS.white, fontSize: 22, fontWeight: "700", marginBottom: 4 },
+  sub:            { color: COLORS.gray500, fontSize: 12, marginBottom: 12 },
+  verifiedBadge:  { backgroundColor: `${COLORS.green}15`, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, borderWidth: 1, borderColor: `${COLORS.green}40` },
+  verifiedText:   { color: COLORS.green, fontSize: 12, fontWeight: "700" },
+
+  statsRow:       { flexDirection: "row", marginHorizontal: 16, gap: 8, marginBottom: 16 },
+  statBox:        { flex: 1, backgroundColor: COLORS.darkSurface, borderRadius: 14, padding: 14, alignItems: "center", borderWidth: 1, borderColor: COLORS.darkBorder },
+  statValue:      { color: COLORS.gold, fontSize: 18, fontWeight: "700", marginBottom: 2 },
+  statLabel:      { color: COLORS.gray500, fontSize: 10, textAlign: "center" },
+
+  vehicleCard:    { marginHorizontal: 16, backgroundColor: COLORS.darkSurface, borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: COLORS.darkBorder },
+  vehicleCardTitle: { color: COLORS.white, fontWeight: "700", fontSize: 15, marginBottom: 12 },
+  vehicleRow:     { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
+  vehicleKey:     { color: COLORS.gray500, fontSize: 13 },
+  vehicleVal:     { color: COLORS.white, fontSize: 13, fontWeight: "600" },
+
+  menuCard:       { marginHorizontal: 16, backgroundColor: COLORS.darkSurface, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: COLORS.darkBorder, marginBottom: 14 },
+  menuItem:       { flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
+  menuIcon:       { fontSize: 20, marginRight: 14, width: 28 },
+  menuLabel:      { color: COLORS.white, fontSize: 15, fontWeight: "500", marginBottom: 2 },
+  menuSub:        { color: COLORS.gray500, fontSize: 11 },
+  chevron:        { color: COLORS.gray500, fontSize: 22 },
+
+  signOutBtn:     { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, borderColor: COLORS.red, paddingVertical: 14, alignItems: "center", marginBottom: 12 },
+  signOutText:    { color: COLORS.red, fontWeight: "700", fontSize: 16 },
+  version:        { color: COLORS.gray500, fontSize: 11, textAlign: "center", paddingBottom: 28 },
+});
