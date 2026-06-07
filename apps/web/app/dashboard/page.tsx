@@ -225,6 +225,7 @@ export default function DashboardPage() {
                   {i > 0 && <div className="w-px h-6 sm:h-8 bg-white/10 mr-1 hidden sm:block" />}
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#C9A84C]/10 flex items-center justify-center text-[#C9A84C]">
                     {s.icon}
+                  </div>
                   <div>
                     <p className="text-white text-xs sm:text-sm font-bold tabular-nums" style={s.color ? { color: s.color } : {}}>{s.val}</p>
                     <p className="text-gray-500 text-[9px] sm:text-[10px]">{s.lbl}</p>
