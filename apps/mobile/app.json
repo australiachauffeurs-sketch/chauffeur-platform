@@ -3,20 +3,61 @@
     "name": "Elite Chauffeurs",
     "slug": "elite-chauffeurs",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
+    "scheme": "elitechauffeurs",
     "splash": {
-      "backgroundColor": "#0A0A0A"
+      "backgroundColor": "#0A0A0F",
+      "resizeMode": "contain"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.au.elitechauffeurs.app"
+      "bundleIdentifier": "com.au.elitechauffeurs.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to show nearby drivers and provide accurate pickup.",
+        "NSCameraUsageDescription": "We need camera access for profile photos.",
+        "NSPhotoLibraryUsageDescription": "We need photo library access for profile photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0A0A0A"
+        "backgroundColor": "#0A0A0F"
       },
-      "package": "com.au.elitechauffeurs.app"
+      "package": "com.au.elitechauffeurs.app",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "color": "#C9A84C"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Elite Chauffeurs to use your location to show your driver's position."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/elite-chauffeurs"
     },
     "web": {}
   }

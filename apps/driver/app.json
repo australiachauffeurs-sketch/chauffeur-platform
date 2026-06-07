@@ -3,33 +3,71 @@
     "name": "Elite Chauffeurs Driver",
     "slug": "elite-driver",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
+    "scheme": "elitechauffeurdriver",
     "splash": {
-      "backgroundColor": "#0A0A0A"
+      "backgroundColor": "#0A0A0F",
+      "resizeMode": "contain"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.au.elitechauffeurs.driver",
+      "buildNumber": "1",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We need your location to track your position for active trips.",
-        "NSLocationAlwaysUsageDescription": "We need your location in the background to track your position during active trips."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location in the background to track your position during active trips.",
+        "NSCameraUsageDescription": "We need camera access for document uploads.",
+        "NSPhotoLibraryUsageDescription": "We need photo library access for document uploads.",
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0A0A0A"
+        "backgroundColor": "#0A0A0F"
       },
       "package": "com.au.elitechauffeurs.driver",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION"]
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
     },
     "plugins": [
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Elite Chauffeurs Driver to use your location for active trips."
+          "locationAlwaysAndWhenInUsePermission": "Allow Elite Chauffeurs Driver to use your location for active trips.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#C9A84C",
+          "sounds": ["./assets/notification.wav"]
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/elite-driver"
+    },
+    "web": {}
   }
 }
