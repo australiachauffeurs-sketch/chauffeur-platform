@@ -1,118 +1,223 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+const EMPTY = { code:"", description:"", discount_type:"percent", discount_value:"10", max_uses:"", expires_at:"" };
+
+function Modal({ title, onClose, children }: { title:string; onClose:()=>void; children:React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:"rgba(0,0,0,0.45)" }}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-[#E8E0D0]">
+        <div className="flex items-center justify-between p-6 border-b border-[#F0EBE2]">
+          <h2 className="text-[#1C1611] font-bold text-lg">{title}</h2>
+          <button onClick={onClose} className="text-[#B0A898] hover:text-[#1C1611] text-xl leading-none">✕</button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+const inp = "w-full border border-[#E8E0D0] rounded-xl px-3 py-2.5 text-sm text-[#1C1611] focus:outline-none focus:border-[#C9A84C] focus:ring-1 focus:ring-[#C9A84C]/20 bg-white";
 
 export default function PromosPage() {
-  const [promos, setPromos] = useState<any[]>([]);
-  const [form, setForm] = useState({ code: "", description: "", discount_type: "percent", discount_value: 10, max_uses: "" });
+  const [promos,  setPromos]  = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [form,    setForm]    = useState({ ...EMPTY });
+  const [saving,  setSaving]  = useState(false);
+  const [err,     setErr]     = useState("");
+  const [ok,      setOk]      = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/promos");
-    const data = await res.json();
-    setPromos(data.promos || []);
-    setLoading(false);
-  };
+    try {
+      const res  = await fetch("/api/admin/promos");
+      const data = await res.json();
+      setPromos(data.promos || []);
+    } catch {}
+    finally { setLoading(false); }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const create = async () => {
-    setSaving(true);
-    await fetch("/api/admin/promos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, discount_value: Number(form.discount_value), max_uses: form.max_uses ? Number(form.max_uses) : null }),
-    });
-    setMsg("Promo created!");
-    setForm({ code: "", description: "", discount_type: "percent", discount_value: 10, max_uses: "" });
-    await load();
-    setSaving(false);
-    setTimeout(() => setMsg(""), 3000);
+    if (!form.code) { setErr("Promo code is required."); return; }
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch("/api/admin/promos", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          ...form,
+          code:           form.code.toUpperCase(),
+          discount_value: Number(form.discount_value),
+          max_uses:       form.max_uses ? Number(form.max_uses) : null,
+          expires_at:     form.expires_at || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.error || "Failed"); return; }
+      setOk("Promo code created!"); setShowNew(false); setForm({ ...EMPTY }); load();
+      setTimeout(() => setOk(""), 3000);
+    } catch { setErr("Network error"); }
+    finally { setSaving(false); }
   };
 
   const toggle = async (id: string, is_active: boolean) => {
     await fetch("/api/admin/promos", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method:"PATCH", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ id, is_active: !is_active }),
     });
     load();
   };
 
-  return (
-    <div className="p-8 min-h-screen bg-[#FAF8F4] text-[#1C1611]">
-      <h1 className="text-2xl font-bold text-[#C9A84C] mb-8" style={{ fontFamily: "'Playfair Display', serif" }}>Promo Codes</h1>
+  const deletePromo = async (id: string) => {
+    if (!confirm("Delete this promo code?")) return;
+    await fetch("/api/admin/promos", {
+      method:"DELETE", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ id }),
+    });
+    load();
+  };
 
-      {/* Create form */}
-      <div className="bg-white rounded-2xl p-6 border border-[#E8E0D0] mb-8 shadow-sm">
-        <h2 className="text-[#1C1611] font-semibold mb-4">Create New Promo</h2>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <input placeholder="CODE (e.g. SUMMER20)" value={form.code} onChange={e => setForm(f => ({...f, code: e.target.value.toUpperCase()}))}
-            className="bg-[#FAF8F4] border border-[#E8E0D0] rounded-xl px-4 py-3 text-[#1C1611] text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-          <input placeholder="Description" value={form.description} onChange={e => setForm(f => ({...f, description: e.target.value}))}
-            className="bg-[#FAF8F4] border border-[#E8E0D0] rounded-xl px-4 py-3 text-[#1C1611] text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-          <select value={form.discount_type} onChange={e => setForm(f => ({...f, discount_type: e.target.value}))}
-            className="bg-[#FAF8F4] border border-[#E8E0D0] rounded-xl px-4 py-3 text-[#1C1611] text-sm focus:outline-none">
-            <option value="percent">Percentage (%)</option>
-            <option value="fixed">Fixed Amount ($)</option>
-          </select>
-          <input type="number" placeholder="Value (e.g. 10 for 10%)" value={form.discount_value} onChange={e => setForm(f => ({...f, discount_value: Number(e.target.value)}))}
-            className="bg-[#FAF8F4] border border-[#E8E0D0] rounded-xl px-4 py-3 text-[#1C1611] text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-          <input type="number" placeholder="Max uses (blank = unlimited)" value={form.max_uses} onChange={e => setForm(f => ({...f, max_uses: e.target.value}))}
-            className="bg-[#FAF8F4] border border-[#E8E0D0] rounded-xl px-4 py-3 text-[#1C1611] text-sm focus:outline-none focus:border-[#C9A84C]/50" />
+  const active   = promos.filter(p => p.is_active).length;
+  const totalUses = promos.reduce((s,p) => s + (p.uses_count||0), 0);
+
+  return (
+    <div className="animate-in space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[#1C1611] text-xl font-bold">Promo Codes</h1>
+          <p className="text-[#B0A898] text-sm mt-0.5">{promos.length} codes · {active} active · {totalUses} total uses</p>
         </div>
-        <button onClick={create} disabled={saving || !form.code}
-          className="bg-[#C9A84C] text-[#1C1611] font-bold px-6 py-3 rounded-xl text-sm disabled:opacity-50 hover:bg-[#d4a93a] transition-colors">
-          {saving ? "Creating…" : "Create Promo"}
-        </button>
-        {msg && <p className="text-green-600 text-sm mt-2">{msg}</p>}
+        <button onClick={() => { setShowNew(true); setErr(""); setForm({ ...EMPTY }); }} className="btn-gold text-sm">+ New Promo Code</button>
+      </div>
+
+      {ok && <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">{ok}</div>}
+
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label:"Total Codes",  value: promos.length },
+          { label:"Active",       value: active },
+          { label:"Total Uses",   value: totalUses },
+        ].map(s => (
+          <div key={s.label} className="bg-white border border-[#E8E0D0] rounded-2xl p-4 text-center">
+            <p className="text-2xl font-bold text-[#1C1611]">{s.value}</p>
+            <p className="text-[#B0A898] text-xs mt-1">{s.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-[#E8E0D0] overflow-hidden shadow-sm">
+      <div className="bg-white border border-[#E8E0D0] rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-[#E8E0D0] text-[#B0A898] text-xs uppercase tracking-wider">
-            <th className="px-6 py-4 text-left">Code</th>
-            <th className="px-6 py-4 text-left">Discount</th>
-            <th className="px-6 py-4 text-left">Uses</th>
-            <th className="px-6 py-4 text-left">Status</th>
-            <th className="px-6 py-4 text-left">Action</th>
-          </tr></thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-[#B0A898]">Loading…</td></tr>
-            ) : promos.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-[#B0A898]">No promo codes yet. Create one above.</td></tr>
-            ) : promos.map(p => (
-              <tr key={p.id} className="border-b border-[#E8E0D0] hover:bg-[#FAF8F4] transition-colors">
-                <td className="px-6 py-4">
-                  <span className="font-mono text-[#C9A84C] font-bold">{p.code}</span>
-                  {p.description && <><br/><span className="text-[#7A6F62] text-xs">{p.description}</span></>}
-                </td>
-                <td className="px-6 py-4 text-[#1C1611] font-medium">
-                  {p.discount_type === "percent" ? `${p.discount_value}%` : `$${p.discount_value}`}
-                </td>
-                <td className="px-6 py-4 text-[#7A6F62]">
-                  {p.uses_count}{p.max_uses ? ` / ${p.max_uses}` : ""}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${p.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-                    {p.is_active ? "Active" : "Inactive"}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <button onClick={() => toggle(p.id, p.is_active)}
-                    className="text-xs text-[#7A6F62] hover:text-[#1C1611] transition-colors underline underline-offset-2">
-                    {p.is_active ? "Deactivate" : "Activate"}
-                  </button>
-                </td>
-              </tr>
-            ))}
+          <thead>
+            <tr className="border-b border-[#F0EBE2] text-[#B0A898] text-xs uppercase tracking-wider bg-[#FAF8F4]">
+              {["Code","Discount","Description","Uses","Expires","Status",""].map(h => (
+                <th key={h} className="text-left px-5 py-3 font-medium whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#F0EBE2]">
+            {loading ? Array(3).fill(0).map((_,i) => (
+              <tr key={i}><td colSpan={7} className="px-5 py-4"><div className="h-4 bg-[#E8E0D0] rounded animate-pulse" /></td></tr>
+            )) : promos.length===0 ? (
+              <tr><td colSpan={7} className="px-5 py-16 text-center">
+                <p className="text-4xl mb-2">🎟</p>
+                <p className="text-[#7A6F62] font-medium">No promo codes yet</p>
+                <p className="text-[#B0A898] text-xs mt-1">Click "+ New Promo Code" to create your first one</p>
+              </td></tr>
+            ) : promos.map(p => {
+              const expired = p.expires_at && new Date(p.expires_at) < new Date();
+              const maxed   = p.max_uses && p.uses_count >= p.max_uses;
+              return (
+                <tr key={p.id} className="hover:bg-[#FAF8F4] transition-colors">
+                  <td className="px-5 py-4">
+                    <span className="font-mono text-[#C9A84C] font-bold text-sm tracking-wider">{p.code}</span>
+                  </td>
+                  <td className="px-5 py-4 text-[#1C1611] font-bold">
+                    {p.discount_type==="percent" ? `${p.discount_value}%` : `$${p.discount_value}`}
+                    <span className="text-[#B0A898] text-xs font-normal ml-1">{p.discount_type==="percent"?"off":"fixed"}</span>
+                  </td>
+                  <td className="px-5 py-4 text-[#7A6F62] text-xs max-w-[160px] truncate">{p.description || "—"}</td>
+                  <td className="px-5 py-4 text-[#7A6F62] text-xs">
+                    {p.uses_count||0}{p.max_uses ? <span className="text-[#B0A898]"> / {p.max_uses}</span> : ""}
+                    {maxed && <span className="ml-1 text-red-500 font-semibold">Maxed</span>}
+                  </td>
+                  <td className="px-5 py-4 text-xs">
+                    {p.expires_at
+                      ? <span className={expired ? "text-red-500 font-semibold" : "text-[#7A6F62]"}>{new Date(p.expires_at).toLocaleDateString("en-AU")}{expired && " (exp)"}</span>
+                      : <span className="text-[#B0A898]">Never</span>
+                    }
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+                      p.is_active && !expired && !maxed
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : "bg-[#F5F1EB] text-[#B0A898] border-[#E8E0D0]"
+                    }`}>
+                      {p.is_active && !expired && !maxed ? "Active" : expired ? "Expired" : maxed ? "Maxed" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => toggle(p.id, p.is_active)} className="text-xs text-[#C9A84C] hover:underline font-semibold">
+                        {p.is_active ? "Deactivate" : "Activate"}
+                      </button>
+                      <button onClick={() => deletePromo(p.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+
+      {/* Create modal */}
+      {showNew && (
+        <Modal title="New Promo Code" onClose={() => setShowNew(false)}>
+          <div className="space-y-4">
+            {err && <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
+            <div>
+              <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Promo Code *</label>
+              <input className={inp} placeholder="SUMMER20" value={form.code} onChange={e=>setForm(f=>({...f,code:e.target.value.toUpperCase()}))} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Description</label>
+              <input className={inp} placeholder="Summer sale — 20% off" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Discount Type</label>
+                <select className={inp} value={form.discount_type} onChange={e=>setForm(f=>({...f,discount_type:e.target.value}))}>
+                  <option value="percent">Percentage (%)</option>
+                  <option value="fixed">Fixed Amount ($)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Value</label>
+                <input className={inp} type="number" min={1} placeholder={form.discount_type==="percent"?"10":"50"} value={form.discount_value} onChange={e=>setForm(f=>({...f,discount_value:e.target.value}))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Max Uses</label>
+                <input className={inp} type="number" min={1} placeholder="Unlimited" value={form.max_uses} onChange={e=>setForm(f=>({...f,max_uses:e.target.value}))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Expires On</label>
+                <input className={inp} type="date" value={form.expires_at} onChange={e=>setForm(f=>({...f,expires_at:e.target.value}))} />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowNew(false)} className="flex-1 border border-[#E8E0D0] text-[#7A6F62] rounded-xl py-2.5 text-sm hover:text-[#1C1611] transition-colors">Cancel</button>
+              <button onClick={create} disabled={saving} className="flex-1 btn-gold text-sm disabled:opacity-60">{saving ? "Creating…" : "Create Code"}</button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

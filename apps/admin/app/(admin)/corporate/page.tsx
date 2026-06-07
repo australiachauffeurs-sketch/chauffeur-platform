@@ -1,226 +1,249 @@
 "use client";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-
-interface CorporateAccount {
-  id: string;
-  company_name: string;
-  abn: string | null;
-  billing_email: string;
-  billing_address: string | null;
-  credit_limit: number;
-  current_balance: number;
-  payment_terms: number;
-  is_active: boolean;
-  created_at: string;
-}
+import { useState, useEffect, useCallback } from "react";
 
 function formatAUD(n: number) {
-  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(n);
+  return new Intl.NumberFormat("en-AU", { style:"currency", currency:"AUD" }).format(n);
 }
 
+const EMPTY = { company_name:"", abn:"", billing_email:"", billing_address:"", credit_limit:"5000", payment_terms:"30" };
+
+function Modal({ title, onClose, children, wide=false }: { title:string; onClose:()=>void; children:React.ReactNode; wide?:boolean }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:"rgba(0,0,0,0.45)" }}>
+      <div className={`bg-white rounded-2xl shadow-xl w-full border border-[#E8E0D0] max-h-[90vh] overflow-y-auto ${wide?"max-w-2xl":"max-w-lg"}`}>
+        <div className="flex items-center justify-between p-6 border-b border-[#F0EBE2]">
+          <h2 className="text-[#1C1611] font-bold text-lg">{title}</h2>
+          <button onClick={onClose} className="text-[#B0A898] hover:text-[#1C1611] text-xl leading-none">✕</button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+const inp = "w-full border border-[#E8E0D0] rounded-xl px-3 py-2.5 text-sm text-[#1C1611] focus:outline-none focus:border-[#C9A84C] focus:ring-1 focus:ring-[#C9A84C]/20 bg-white";
+
 export default function CorporatePage() {
-  const [accounts, setAccounts] = useState<CorporateAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    company_name: "",
-    abn: "",
-    billing_email: "",
-    billing_address: "",
-    credit_limit: "5000",
-    payment_terms: "30",
-  });
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [showNew,  setShowNew]  = useState(false);
+  const [viewing,  setViewing]  = useState<any|null>(null);
+  const [form,     setForm]     = useState({ ...EMPTY });
+  const [saving,   setSaving]   = useState(false);
+  const [err,      setErr]      = useState("");
 
-  const load = () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    fetch("/api/admin/corporate")
-      .then(r => r.json())
-      .then(d => setAccounts(d.accounts || []))
-      .finally(() => setLoading(false));
-  };
+    try {
+      const res  = await fetch("/api/admin/corporate");
+      const data = await res.json();
+      setAccounts(data.accounts || []);
+    } catch {}
+    finally { setLoading(false); }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    await fetch("/api/admin/corporate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, credit_limit: parseFloat(form.credit_limit), payment_terms: parseInt(form.payment_terms) }),
-    });
-    setSaving(false);
-    setShowForm(false);
-    setForm({ company_name: "", abn: "", billing_email: "", billing_address: "", credit_limit: "5000", payment_terms: "30" });
-    load();
+  const create = async () => {
+    if (!form.company_name || !form.billing_email) { setErr("Company name and billing email are required."); return; }
+    setSaving(true); setErr("");
+    try {
+      const res = await fetch("/api/admin/corporate", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ ...form, credit_limit: parseFloat(form.credit_limit)||5000, payment_terms: parseInt(form.payment_terms)||30 }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.error||"Failed"); return; }
+      setShowNew(false); setForm({ ...EMPTY }); load();
+    } catch { setErr("Network error"); }
+    finally { setSaving(false); }
   };
 
   const toggleActive = async (id: string, is_active: boolean) => {
     await fetch("/api/admin/corporate", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, is_active }),
+      method:"PATCH", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ id, is_active: !is_active }),
     });
     load();
+    if (viewing?.id===id) setViewing((v:any) => ({ ...v, is_active: !is_active }));
   };
 
+  const active   = accounts.filter(a=>a.is_active).length;
+  const totalCredit = accounts.reduce((s,a)=>s+(a.credit_limit||0),0);
+
   return (
-    <div className="p-8 min-h-screen bg-[#0a0a0f] text-white">
-      <div className="flex items-center justify-between mb-8">
+    <div className="animate-in space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#C9A84C]">Corporate Accounts</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage corporate clients with invoice billing and credit limits</p>
+          <h1 className="text-[#1C1611] text-xl font-bold">Corporate Accounts</h1>
+          <p className="text-[#B0A898] text-sm mt-0.5">{accounts.length} accounts · {active} active · {formatAUD(totalCredit)} total credit</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-5 py-2.5 bg-[#C9A84C] text-black rounded-xl font-bold text-sm hover:bg-[#E8C97A] transition-colors"
-        >
-          + New Account
-        </button>
+        <button onClick={() => { setShowNew(true); setErr(""); setForm({ ...EMPTY }); }} className="btn-gold text-sm">+ New Account</button>
       </div>
 
-      {/* Create Account Form */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111827] rounded-2xl p-8 w-full max-w-lg border border-white/10">
-            <h2 className="text-white font-bold text-lg mb-6">New Corporate Account</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="text-gray-400 text-xs uppercase tracking-wider block mb-1">Company Name *</label>
-                <input required value={form.company_name} onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-400 text-xs uppercase tracking-wider block mb-1">ABN</label>
-                  <input value={form.abn} onChange={e => setForm(f => ({ ...f, abn: e.target.value }))}
-                    placeholder="12 345 678 901"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-                </div>
-                <div>
-                  <label className="text-gray-400 text-xs uppercase tracking-wider block mb-1">Billing Email *</label>
-                  <input required type="email" value={form.billing_email} onChange={e => setForm(f => ({ ...f, billing_email: e.target.value }))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-                </div>
-              </div>
-              <div>
-                <label className="text-gray-400 text-xs uppercase tracking-wider block mb-1">Billing Address</label>
-                <input value={form.billing_address} onChange={e => setForm(f => ({ ...f, billing_address: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-400 text-xs uppercase tracking-wider block mb-1">Credit Limit (AUD)</label>
-                  <input type="number" min="0" step="500" value={form.credit_limit} onChange={e => setForm(f => ({ ...f, credit_limit: e.target.value }))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-                </div>
-                <div>
-                  <label className="text-gray-400 text-xs uppercase tracking-wider block mb-1">Payment Terms (days)</label>
-                  <input type="number" min="7" max="90" value={form.payment_terms} onChange={e => setForm(f => ({ ...f, payment_terms: e.target.value }))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/50" />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)}
-                  className="flex-1 py-2.5 bg-white/5 text-gray-400 rounded-xl font-bold text-sm hover:bg-white/10 transition-colors">
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 py-2.5 bg-[#C9A84C] text-black rounded-xl font-bold text-sm hover:bg-[#E8C97A] transition-colors disabled:opacity-60">
-                  {saving ? "Creating…" : "Create Account"}
-                </button>
-              </div>
-            </form>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label:"Total Accounts", value: accounts.length },
+          { label:"Active",         value: active },
+          { label:"Total Credit",   value: formatAUD(totalCredit) },
+        ].map(s => (
+          <div key={s.label} className="bg-white border border-[#E8E0D0] rounded-2xl p-4 text-center">
+            <p className="text-2xl font-bold text-[#1C1611]">{s.value}</p>
+            <p className="text-[#B0A898] text-xs mt-1">{s.label}</p>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Accounts list */}
       {loading ? (
-        <div className="text-gray-400 text-sm">Loading accounts…</div>
-      ) : accounts.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <p className="text-lg mb-2">No corporate accounts yet</p>
-          <p className="text-sm">Click "New Account" to add your first corporate client.</p>
+        <div className="space-y-4">{Array(3).fill(0).map((_,i)=><div key={i} className="h-32 bg-white border border-[#E8E0D0] rounded-2xl animate-pulse"/>)}</div>
+      ) : accounts.length===0 ? (
+        <div className="text-center py-20">
+          <p className="text-4xl mb-3">🏢</p>
+          <p className="text-[#7A6F62] font-medium mb-1">No corporate accounts yet</p>
+          <p className="text-[#B0A898] text-sm">Click "+ New Account" to onboard your first corporate client.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {accounts.map(acc => {
-            const usedPct = acc.credit_limit > 0 ? Math.min((acc.current_balance / acc.credit_limit) * 100, 100) : 0;
-            const nearLimit = usedPct >= 80;
+            const usedPct  = acc.credit_limit>0 ? Math.min((acc.current_balance/acc.credit_limit)*100, 100) : 0;
+            const nearLimit = usedPct>=80;
             return (
-              <div key={acc.id} className={`bg-[#111827] rounded-2xl p-6 border transition-all ${acc.is_active ? "border-white/5" : "border-white/[0.02] opacity-60"}`}>
-                <div className="flex items-start justify-between mb-4">
+              <div key={acc.id} className={`bg-white rounded-2xl p-6 border transition-all ${acc.is_active?"border-[#E8E0D0] hover:border-[#C9A84C]/40":"border-[#E8E0D0] opacity-60"}`}>
+                <div className="flex items-start justify-between mb-5">
                   <div>
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-white font-bold text-lg">{acc.company_name}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${acc.is_active ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-[#1C1611] font-bold text-lg">{acc.company_name}</h3>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${acc.is_active?"bg-green-50 text-green-700 border-green-200":"bg-[#F5F1EB] text-[#B0A898] border-[#E8E0D0]"}`}>
                         {acc.is_active ? "Active" : "Inactive"}
                       </span>
                     </div>
-                    {acc.abn && <p className="text-gray-500 text-xs mt-0.5">ABN: {acc.abn}</p>}
+                    {acc.abn && <p className="text-[#B0A898] text-xs">ABN: {acc.abn}</p>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Link
-                      href={`/bookings?corporate=${acc.id}`}
-                      className="px-3 py-1.5 bg-white/5 text-gray-400 rounded-lg text-xs font-medium hover:bg-white/10 transition-colors"
-                    >
-                      View Bookings
-                    </Link>
-                    <button
-                      onClick={() => toggleActive(acc.id, !acc.is_active)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${acc.is_active ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-green-500/10 text-green-400 hover:bg-green-500/20"}`}
-                    >
+                    <button onClick={() => setViewing(acc)} className="text-xs border border-[#E8E0D0] text-[#7A6F62] hover:border-[#C9A84C]/40 hover:text-[#1C1611] rounded-lg px-3 py-1.5 transition-colors">
+                      Details
+                    </button>
+                    <button onClick={() => toggleActive(acc.id, acc.is_active)}
+                      className={`text-xs rounded-lg px-3 py-1.5 transition-colors font-semibold border ${acc.is_active?"border-red-200 text-red-600 hover:bg-red-50":"border-green-200 text-green-700 hover:bg-green-50"}`}>
                       {acc.is_active ? "Deactivate" : "Activate"}
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-500 text-xs mb-0.5">Billing Email</p>
-                    <p className="text-white">{acc.billing_email}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs mb-0.5">Payment Terms</p>
-                    <p className="text-white">Net {acc.payment_terms} days</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs mb-0.5">Current Balance</p>
-                    <p className={`font-bold ${nearLimit ? "text-red-400" : "text-white"}`}>{formatAUD(acc.current_balance)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs mb-0.5">Credit Limit</p>
-                    <p className="text-white font-bold">{formatAUD(acc.credit_limit)}</p>
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+                  {[
+                    { label:"Billing Email",    value: acc.billing_email },
+                    { label:"Payment Terms",    value: `Net ${acc.payment_terms} days` },
+                    { label:"Current Balance",  value: formatAUD(acc.current_balance||0), highlight: nearLimit },
+                    { label:"Credit Limit",     value: formatAUD(acc.credit_limit||0) },
+                  ].map(({ label, value, highlight }) => (
+                    <div key={label} className="bg-[#FAF8F4] rounded-xl p-3">
+                      <p className="text-[#B0A898] text-xs mb-0.5">{label}</p>
+                      <p className={`text-xs font-semibold ${highlight ? "text-red-600" : "text-[#1C1611]"}`}>{value}</p>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Credit usage bar */}
+                {/* Credit bar */}
                 <div>
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Credit Used</span>
-                    <span className={nearLimit ? "text-red-400 font-semibold" : ""}>{usedPct.toFixed(0)}%</span>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-[#B0A898]">Credit utilisation</span>
+                    <span className={nearLimit?"text-red-600 font-semibold":"text-[#7A6F62]"}>{usedPct.toFixed(0)}%</span>
                   </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${usedPct}%`, backgroundColor: nearLimit ? "#ef4444" : "#C9A84C" }}
-                    />
+                  <div className="h-2 bg-[#F0EBE2] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{ width:`${usedPct}%`, backgroundColor: nearLimit?"#ef4444":"#C9A84C" }} />
                   </div>
-                  {nearLimit && (
-                    <p className="text-red-400 text-xs mt-1">Near credit limit — review account</p>
-                  )}
+                  {nearLimit && <p className="text-red-500 text-xs mt-1.5 font-medium">⚠ Near credit limit — review account</p>}
                 </div>
-
-                {acc.billing_address && (
-                  <p className="text-gray-600 text-xs mt-3">{acc.billing_address}</p>
-                )}
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* New Account modal */}
+      {showNew && (
+        <Modal title="New Corporate Account" onClose={() => setShowNew(false)}>
+          <div className="space-y-4">
+            {err && <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
+            <div>
+              <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Company Name *</label>
+              <input className={inp} placeholder="Acme Corporation Pty Ltd" value={form.company_name} onChange={e=>setForm(f=>({...f,company_name:e.target.value}))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">ABN</label>
+                <input className={inp} placeholder="12 345 678 901" value={form.abn} onChange={e=>setForm(f=>({...f,abn:e.target.value}))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Billing Email *</label>
+                <input className={inp} type="email" placeholder="accounts@acme.com.au" value={form.billing_email} onChange={e=>setForm(f=>({...f,billing_email:e.target.value}))} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Billing Address</label>
+              <input className={inp} placeholder="Level 5, 123 Queen St, Brisbane QLD 4000" value={form.billing_address} onChange={e=>setForm(f=>({...f,billing_address:e.target.value}))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Credit Limit (AUD)</label>
+                <input className={inp} type="number" min={0} step={500} value={form.credit_limit} onChange={e=>setForm(f=>({...f,credit_limit:e.target.value}))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5 uppercase tracking-wider">Payment Terms (days)</label>
+                <select className={inp} value={form.payment_terms} onChange={e=>setForm(f=>({...f,payment_terms:e.target.value}))}>
+                  <option value="7">Net 7 days</option>
+                  <option value="14">Net 14 days</option>
+                  <option value="30">Net 30 days</option>
+                  <option value="60">Net 60 days</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowNew(false)} className="flex-1 border border-[#E8E0D0] text-[#7A6F62] rounded-xl py-2.5 text-sm hover:text-[#1C1611] transition-colors">Cancel</button>
+              <button onClick={create} disabled={saving} className="flex-1 btn-gold text-sm disabled:opacity-60">{saving?"Creating…":"Create Account"}</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Detail modal */}
+      {viewing && (
+        <Modal title={viewing.company_name} onClose={() => setViewing(null)} wide>
+          <div className="space-y-5">
+            <div className="flex items-center gap-2">
+              <span className={`text-sm px-3 py-1 rounded-full font-medium border ${viewing.is_active?"bg-green-50 text-green-700 border-green-200":"bg-[#F5F1EB] text-[#B0A898] border-[#E8E0D0]"}`}>
+                {viewing.is_active?"Active":"Inactive"}
+              </span>
+              {viewing.abn && <span className="text-[#B0A898] text-xs">ABN: {viewing.abn}</span>}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                ["Billing Email",    viewing.billing_email],
+                ["Billing Address",  viewing.billing_address||"Not set"],
+                ["Payment Terms",    `Net ${viewing.payment_terms} days`],
+                ["Credit Limit",     formatAUD(viewing.credit_limit||0)],
+                ["Current Balance",  formatAUD(viewing.current_balance||0)],
+                ["Available Credit", formatAUD(Math.max(0,(viewing.credit_limit||0)-(viewing.current_balance||0)))],
+              ].map(([k,v]) => (
+                <div key={k} className="bg-[#FAF8F4] rounded-xl p-3">
+                  <p className="text-[#B0A898] text-xs mb-0.5">{k}</p>
+                  <p className="text-[#1C1611] font-medium text-xs">{v}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button onClick={() => toggleActive(viewing.id, viewing.is_active)}
+                className={`text-sm px-5 py-2.5 rounded-xl font-semibold border transition-colors ${viewing.is_active?"border-red-200 text-red-600 hover:bg-red-50":"border-green-200 text-green-700 hover:bg-green-50"}`}>
+                {viewing.is_active ? "Deactivate Account" : "Activate Account"}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
