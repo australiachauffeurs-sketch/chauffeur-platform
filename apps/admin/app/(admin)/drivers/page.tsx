@@ -1,38 +1,63 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-const STATUS_STYLE: Record<string, string> = {
-  on_trip:   "bg-orange-50 text-orange-700",
-  available: "bg-green-50 text-green-700",
-  offline:   "bg-[#F5F1EB] text-[#B0A898]",
+const STATUS_STYLE: Record<string,string> = {
+  on_trip:   "bg-orange-50 text-orange-700 border border-orange-200",
+  available: "bg-green-50 text-green-700 border border-green-200",
+  offline:   "bg-[#F5F1EB] text-[#B0A898] border border-[#E8E0D0]",
 };
+const VEHICLE_TYPES = ["sedan","suv","luxury","van","stretch_limo","minibus"];
+const VEH_LABEL: Record<string,string> = { sedan:"Sedan", suv:"SUV", luxury:"Luxury Sedan", van:"Van / People Mover", stretch_limo:"Limousine", minibus:"Minibus" };
 
-function ExpiryBadge({ date, label }: { date?: string; label: string }) {
-  if (!date) return null;
-  const d = new Date(date);
-  const now = new Date();
-  const daysLeft = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  const expired  = daysLeft <= 0;
-  const warning  = daysLeft <= 30 && daysLeft > 0;
-  if (!expired && !warning) return null;
+function Modal({ title, onClose, children, wide=false }: { title:string; onClose:()=>void; children:React.ReactNode; wide?:boolean }) {
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
-      expired ? "bg-red-50 text-red-700 border-red-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"
-    }`}>
-      {label}: {expired ? "Expired" : `${daysLeft}d`}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:"rgba(0,0,0,0.45)" }}>
+      <div className={`bg-white rounded-2xl shadow-xl w-full border border-[#E8E0D0] max-h-[90vh] overflow-y-auto ${wide?"max-w-2xl":"max-w-lg"}`}>
+        <div className="flex items-center justify-between p-6 border-b border-[#F0EBE2]">
+          <h2 className="text-[#1C1611] font-bold text-lg">{title}</h2>
+          <button onClick={onClose} className="text-[#B0A898] hover:text-[#1C1611] text-xl leading-none">✕</button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function ExpiryBadge({ date, label }: { date?:string; label:string }) {
+  if (!date) return null;
+  const days = Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
+  if (days > 30) return null;
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${days<=0?"bg-red-50 text-red-700 border-red-200":"bg-yellow-50 text-yellow-700 border-yellow-200"}`}>
+      {label}: {days<=0?"Expired":`${days}d`}
     </span>
   );
 }
 
+const inp = "w-full border border-[#E8E0D0] rounded-xl px-3 py-2.5 text-sm text-[#1C1611] focus:outline-none focus:border-[#C9A84C] focus:ring-1 focus:ring-[#C9A84C]/20";
+const sel = inp + " bg-white";
+
 export default function DriversPage() {
-  const [drivers,        setDrivers]        = useState<any[]>([]);
-  const [search,         setSearch]         = useState("");
-  const [loading,        setLoading]        = useState(true);
-  const [approving,      setApproving]      = useState<string|null>(null);
-  const [checkingDocs,   setCheckingDocs]   = useState(false);
-  const [docAlerts,      setDocAlerts]      = useState<string[]|null>(null);
-  const [editingExpiry,  setEditingExpiry]  = useState<string|null>(null);
-  const [expiryFields,   setExpiryFields]   = useState<Record<string, { license_expiry?: string; insurance_expiry?: string; registration_expiry?: string }>>({});
+  const [drivers,      setDrivers]      = useState<any[]>([]);
+  const [search,       setSearch]       = useState("");
+  const [loading,      setLoading]      = useState(true);
+  const [approving,    setApproving]    = useState<string|null>(null);
+  const [checkingDocs, setCheckingDocs] = useState(false);
+  const [docAlerts,    setDocAlerts]    = useState<string[]|null>(null);
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  // Modals
+  const [showInvite,   setShowInvite]   = useState(false);
+  const [viewing,      setViewing]      = useState<any|null>(null);
+  const [editExpiry,   setEditExpiry]   = useState(false);
+
+  const [inviteForm, setInviteForm] = useState({ name:"", email:"", phone:"", city:"", vehicle_type:"sedan" });
+  const [inviting,   setInviting]   = useState(false);
+  const [inviteErr,  setInviteErr]  = useState("");
+  const [inviteOk,   setInviteOk]   = useState(false);
+
+  const [expiryFields, setExpiryFields] = useState<any>({});
+  const [savingExpiry, setSavingExpiry] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,121 +65,147 @@ export default function DriversPage() {
       const res  = await fetch(`/api/admin/drivers?search=${encodeURIComponent(search)}`);
       const data = await res.json();
       setDrivers(data.drivers || []);
-    } catch { /* keep existing */ }
+    } catch {}
     finally { setLoading(false); }
   }, [search]);
 
   useEffect(() => { load(); }, [load]);
 
-  const handleApprove = async (id: string) => {
+  const approve = async (id: string, approved: boolean) => {
     setApproving(id);
     try {
       await fetch("/api/admin/driver/approve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driverId: id, approved: true }),
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ driverId: id, approved }),
       });
-      setDrivers(prev => prev.map(d => d.id === id ? { ...d, approved: true } : d));
-    } catch { /* ignore */ }
+      setDrivers(prev => prev.map(d => d.id===id ? { ...d, approved } : d));
+      if (viewing?.id===id) setViewing((v:any) => ({ ...v, approved }));
+    } catch {}
     finally { setApproving(null); }
   };
 
   const handleCheckDocuments = async () => {
-    setCheckingDocs(true);
-    setDocAlerts(null);
+    setCheckingDocs(true); setDocAlerts(null);
     try {
-      const res  = await fetch("/api/admin/driver/check-documents", { method: "POST" });
+      const res  = await fetch("/api/admin/driver/check-documents", { method:"POST" });
       const data = await res.json();
       setDocAlerts(data.alerts || []);
     } catch { setDocAlerts([]); }
     finally { setCheckingDocs(false); }
   };
 
-  const handleSaveExpiry = async (driverId: string) => {
-    const fields = expiryFields[driverId] || {};
+  const handleInvite = async () => {
+    if (!inviteForm.name || !inviteForm.email) { setInviteErr("Name and email are required."); return; }
+    setInviting(true); setInviteErr("");
     try {
-      await fetch("/api/admin/driver/update-expiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driverId, ...fields }),
+      const res  = await fetch("/api/admin/driver/invite", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(inviteForm),
       });
-      setDrivers(prev => prev.map(d => d.id === driverId ? { ...d, ...fields } : d));
-      setEditingExpiry(null);
-    } catch { /* ignore */ }
+      const data = await res.json();
+      if (!res.ok) { setInviteErr(data.error || "Failed to invite driver"); return; }
+      setInviteOk(true); load();
+      setTimeout(() => { setShowInvite(false); setInviteOk(false); setInviteForm({ name:"", email:"", phone:"", city:"", vehicle_type:"sedan" }); }, 2000);
+    } catch { setInviteErr("Network error"); }
+    finally { setInviting(false); }
   };
 
-  const approved = drivers.filter(d => d.approved).length;
-  const pending  = drivers.filter(d => !d.approved).length;
+  const handleSaveExpiry = async () => {
+    if (!viewing) return;
+    setSavingExpiry(true);
+    try {
+      await fetch("/api/admin/driver/update-expiry", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ driverId: viewing.id, ...expiryFields }),
+      });
+      setViewing((v:any) => ({ ...v, ...expiryFields }));
+      setDrivers(prev => prev.map(d => d.id===viewing.id ? { ...d, ...expiryFields } : d));
+      setEditExpiry(false);
+    } catch {}
+    finally { setSavingExpiry(false); }
+  };
+
+  const filtered = filterStatus==="all" ? drivers
+    : filterStatus==="pending" ? drivers.filter(d=>!d.approved)
+    : filterStatus==="approved" ? drivers.filter(d=>d.approved)
+    : drivers.filter(d => d.status===filterStatus);
+
+  const approved = drivers.filter(d=>d.approved).length;
+  const pending  = drivers.filter(d=>!d.approved).length;
 
   return (
     <div className="animate-in space-y-5">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-[#1C1611] text-xl font-bold">Drivers</h1>
           <p className="text-[#B0A898] text-sm mt-0.5">{approved} approved · {pending} pending approval</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleCheckDocuments}
-            disabled={checkingDocs}
-            className="btn-gold text-sm disabled:opacity-60">
-            {checkingDocs ? "Checking…" : "Check Documents"}
+          <button onClick={handleCheckDocuments} disabled={checkingDocs} className="border border-[#E8E0D0] text-[#7A6F62] hover:text-[#1C1611] hover:border-[#C9A84C]/40 rounded-xl px-4 py-2.5 text-sm transition-colors disabled:opacity-60">
+            {checkingDocs ? "Checking…" : "Check Docs"}
           </button>
-          <button className="btn-gold text-sm">+ Invite Driver</button>
+          <button onClick={() => { setShowInvite(true); setInviteErr(""); setInviteOk(false); }} className="btn-gold text-sm">+ Invite Driver</button>
         </div>
       </div>
 
       {docAlerts !== null && (
-        <div className={`rounded-xl border p-4 text-sm ${docAlerts.length === 0 ? "bg-green-50 border-green-200 text-green-700" : "bg-yellow-50 border-yellow-200 text-yellow-800"}`}>
-          {docAlerts.length === 0
-            ? "All driver documents are valid for at least 30 days."
-            : (<><p className="font-semibold mb-2">Documents expiring within 30 days:</p><ul className="list-disc list-inside space-y-1">{docAlerts.map((a, i) => <li key={i}>{a}</li>)}</ul></>)
-          }
+        <div className={`rounded-xl border p-4 text-sm ${docAlerts.length===0?"bg-green-50 border-green-200 text-green-700":"bg-yellow-50 border-yellow-200 text-yellow-800"}`}>
+          {docAlerts.length===0 ? "All driver documents are valid for at least 30 days." : (
+            <><p className="font-semibold mb-2">Documents expiring within 30 days:</p><ul className="list-disc list-inside space-y-1">{docAlerts.map((a,i)=><li key={i}>{a}</li>)}</ul></>
+          )}
         </div>
       )}
 
-      <input type="text" placeholder="Search by name or city…" value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="w-full bg-white border border-[#E8E0D0] text-[#1C1611] placeholder:text-[#B0A898] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C] focus:ring-1 focus:ring-[#C9A84C]/20" />
+      {/* Search + filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input type="text" placeholder="Search by name, email or city…" value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 bg-white border border-[#E8E0D0] text-[#1C1611] placeholder:text-[#B0A898] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#C9A84C]" />
+        <div className="flex gap-2 flex-wrap">
+          {["all","approved","pending","available","on_trip","offline"].map(s => (
+            <button key={s} onClick={() => setFilterStatus(s)}
+              className={`px-3 py-2 rounded-xl text-xs font-medium capitalize transition-all whitespace-nowrap ${
+                filterStatus===s ? "bg-[#C9A84C] text-[#1C1611]" : "bg-white border border-[#E8E0D0] text-[#7A6F62] hover:border-[#C9A84C]/40"
+              }`}>
+              {s.replace("_"," ")}
+            </button>
+          ))}
+        </div>
+      </div>
 
+      {/* Cards */}
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {Array(4).fill(0).map((_,i) => (
             <div key={i} className="bg-white border border-[#E8E0D0] rounded-2xl p-5">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#E8E0D0] animate-pulse flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-[#E8E0D0] rounded animate-pulse w-32" />
-                  <div className="h-3 bg-[#E8E0D0] rounded animate-pulse w-48" />
-                </div>
-              </div>
+              <div className="flex items-start gap-4"><div className="w-12 h-12 rounded-full bg-[#E8E0D0] animate-pulse" /><div className="flex-1 space-y-2"><div className="h-4 bg-[#E8E0D0] rounded animate-pulse w-32" /><div className="h-3 bg-[#E8E0D0] rounded animate-pulse w-48" /></div></div>
             </div>
           ))}
         </div>
-      ) : drivers.length === 0 ? (
+      ) : filtered.length===0 ? (
         <div className="text-center py-16 text-[#B0A898]">
-          <p className="text-lg text-[#7A6F62] mb-4">No results</p>
-          <p>No drivers found</p>
+          <p className="text-4xl mb-3">🚗</p>
+          <p className="text-[#7A6F62] font-medium mb-1">No drivers found</p>
+          <p className="text-sm">Invite a driver to get started.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {drivers.map(d => (
+          {filtered.map(d => (
             <div key={d.id} className="bg-white border border-[#E8E0D0] hover:border-[#C9A84C]/50 hover:shadow-[0_4px_20px_rgba(201,168,76,0.1)] rounded-2xl p-5 transition-all duration-200">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-[#C9A84C]/15 flex items-center justify-center text-[#C9A84C] font-bold text-lg flex-shrink-0">
-                  {d.name[0]}
+                  {d.name?.[0]?.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h3 className="text-[#1C1611] font-semibold">{d.name}</h3>
                     {!d.approved && <span className="text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded-full">Pending</span>}
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLE[d.status]||""}`}>{d.status?.replace("_"," ")}</span>
+                    {d.status && <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${STATUS_STYLE[d.status]||""}`}>{d.status?.replace("_"," ")}</span>}
                   </div>
-                  <p className="text-[#7A6F62] text-xs mt-1 truncate">{d.vehicle}</p>
-                  <p className="text-[#B0A898] text-xs">{d.city} · {d.phone}</p>
+                  <p className="text-[#7A6F62] text-xs truncate">{d.vehicle || d.vehicle_type || "No vehicle assigned"}</p>
+                  <p className="text-[#B0A898] text-xs">{[d.city, d.phone].filter(Boolean).join(" · ") || d.email}</p>
                 </div>
               </div>
-              {/* Expiry badges */}
               {(d.license_expiry || d.insurance_expiry || d.registration_expiry) && (
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   <ExpiryBadge date={d.license_expiry}      label="Licence"      />
@@ -162,75 +213,157 @@ export default function DriversPage() {
                   <ExpiryBadge date={d.registration_expiry} label="Registration" />
                 </div>
               )}
-
               <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-[#F0EBE2]">
                 <div className="text-center">
-                  <p className="text-[#1C1611] font-bold">{d.rating > 0 ? `${d.rating}★` : "—"}</p>
+                  <p className="text-[#1C1611] font-bold">{d.rating>0 ? `${d.rating}★` : "—"}</p>
                   <p className="text-[#B0A898] text-xs">Rating</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[#1C1611] font-bold">{d.trips}</p>
+                  <p className="text-[#1C1611] font-bold">{d.trips || 0}</p>
                   <p className="text-[#B0A898] text-xs">Trips</p>
                 </div>
                 <div className="flex flex-col items-center gap-1.5">
                   {!d.approved ? (
-                    <button
-                      onClick={() => handleApprove(d.id)}
-                      disabled={approving === d.id}
+                    <button onClick={()=>approve(d.id,true)} disabled={approving===d.id}
                       className="btn-gold text-xs py-1 px-3 w-full disabled:opacity-60">
-                      {approving === d.id ? "…" : "Approve"}
+                      {approving===d.id ? "…" : "Approve"}
                     </button>
                   ) : (
-                    <button
-                      onClick={() => {
-                        setEditingExpiry(editingExpiry === d.id ? null : d.id);
-                        if (!expiryFields[d.id]) {
-                          setExpiryFields(prev => ({ ...prev, [d.id]: {
-                            license_expiry:      d.license_expiry      || "",
-                            insurance_expiry:    d.insurance_expiry    || "",
-                            registration_expiry: d.registration_expiry || "",
-                          }}));
-                        }
-                      }}
+                    <button onClick={()=>{ setViewing(d); setEditExpiry(false); setExpiryFields({ license_expiry:d.license_expiry||"", insurance_expiry:d.insurance_expiry||"", registration_expiry:d.registration_expiry||"" }); }}
                       className="text-xs border border-[#E8E0D0] text-[#7A6F62] hover:text-[#1C1611] hover:border-[#C9A84C]/40 rounded-lg py-1 px-3 w-full transition-colors">
-                      {editingExpiry === d.id ? "Close" : "Manage"}
+                      Manage
                     </button>
                   )}
                 </div>
               </div>
-
-              {/* Expiry date editor */}
-              {editingExpiry === d.id && (
-                <div className="mt-3 pt-3 border-t border-[#F0EBE2] space-y-2">
-                  <p className="text-xs font-semibold text-[#7A6F62] mb-1">Document Expiry Dates</p>
-                  {[
-                    { key: "license_expiry",      label: "Licence Expiry"      },
-                    { key: "insurance_expiry",    label: "Insurance Expiry"    },
-                    { key: "registration_expiry", label: "Registration Expiry" },
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <label className="text-xs text-[#B0A898] w-28 flex-shrink-0">{label}</label>
-                      <input
-                        type="date"
-                        value={(expiryFields[d.id] as any)?.[key] || ""}
-                        onChange={e => setExpiryFields(prev => ({
-                          ...prev,
-                          [d.id]: { ...(prev[d.id] || {}), [key]: e.target.value },
-                        }))}
-                        className="flex-1 text-xs border border-[#E8E0D0] rounded-lg px-2 py-1 text-[#1C1611] focus:outline-none focus:border-[#C9A84C]"
-                      />
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => handleSaveExpiry(d.id)}
-                    className="btn-gold text-xs py-1 px-4 mt-1">
-                    Save Dates
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
+      )}
+
+      {/* Invite Driver modal */}
+      {showInvite && (
+        <Modal title="Invite Driver" onClose={() => setShowInvite(false)}>
+          {inviteOk ? (
+            <div className="text-center py-8">
+              <p className="text-4xl mb-3">✅</p>
+              <p className="text-[#1C1611] font-semibold">Invite sent!</p>
+              <p className="text-[#B0A898] text-sm mt-1">An invite email has been sent to {inviteForm.email}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {inviteErr && <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{inviteErr}</p>}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Full Name *</label>
+                  <input className={inp} placeholder="James Wilson" value={inviteForm.name} onChange={e=>setInviteForm(f=>({...f,name:e.target.value}))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Email Address *</label>
+                  <input className={inp} type="email" placeholder="james@example.com" value={inviteForm.email} onChange={e=>setInviteForm(f=>({...f,email:e.target.value}))} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Phone</label>
+                    <input className={inp} placeholder="+61 400 000 000" value={inviteForm.phone} onChange={e=>setInviteForm(f=>({...f,phone:e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">City</label>
+                    <input className={inp} placeholder="Brisbane" value={inviteForm.city} onChange={e=>setInviteForm(f=>({...f,city:e.target.value}))} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Vehicle Type</label>
+                  <select className={sel} value={inviteForm.vehicle_type} onChange={e=>setInviteForm(f=>({...f,vehicle_type:e.target.value}))}>
+                    {VEHICLE_TYPES.map(v => <option key={v} value={v}>{VEH_LABEL[v]}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={()=>setShowInvite(false)} className="flex-1 border border-[#E8E0D0] text-[#7A6F62] rounded-xl py-2.5 text-sm hover:text-[#1C1611] transition-colors">Cancel</button>
+                <button onClick={handleInvite} disabled={inviting} className="flex-1 btn-gold text-sm disabled:opacity-60">{inviting?"Sending…":"Send Invite"}</button>
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {/* Driver detail modal */}
+      {viewing && (
+        <Modal title={viewing.name} onClose={() => setViewing(null)} wide>
+          <div className="space-y-5">
+            {/* Status + approval */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {viewing.status && <span className={`text-sm px-3 py-1 rounded-full font-medium border ${STATUS_STYLE[viewing.status]||""}`}>{viewing.status.replace("_"," ")}</span>}
+                {!viewing.approved && <span className="text-sm px-3 py-1 rounded-full font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">Pending Approval</span>}
+                {viewing.approved && <span className="text-sm px-3 py-1 rounded-full font-medium bg-green-50 text-green-700 border border-green-200">✓ Approved</span>}
+              </div>
+              {!viewing.approved ? (
+                <button onClick={()=>approve(viewing.id,true)} disabled={approving===viewing.id} className="btn-gold text-sm disabled:opacity-60">{approving===viewing.id?"…":"Approve Driver"}</button>
+              ) : (
+                <button onClick={()=>approve(viewing.id,false)} disabled={approving===viewing.id} className="text-sm px-4 py-2 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-60">Revoke Approval</button>
+              )}
+            </div>
+
+            {/* Info grid */}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {[
+                ["Email",       viewing.email],
+                ["Phone",       viewing.phone    || "—"],
+                ["City",        viewing.city     || "—"],
+                ["Vehicle",     viewing.vehicle  || viewing.vehicle_type || "—"],
+                ["Rating",      viewing.rating>0 ? `${viewing.rating}★` : "—"],
+                ["Total Trips", viewing.trips    || 0],
+              ].map(([k,v]) => (
+                <div key={k} className="bg-[#FAF8F4] rounded-xl p-3">
+                  <p className="text-[#B0A898] text-xs mb-0.5">{k}</p>
+                  <p className="text-[#1C1611] font-medium text-xs">{v}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Document expiry */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-[#7A6F62] uppercase tracking-wider">Document Expiry Dates</p>
+                <button onClick={()=>setEditExpiry(e=>!e)} className="text-xs text-[#C9A84C] hover:underline">{editExpiry?"Cancel":"Edit"}</button>
+              </div>
+              {editExpiry ? (
+                <div className="space-y-3">
+                  {[
+                    { key:"license_expiry",      label:"Driver's Licence" },
+                    { key:"insurance_expiry",    label:"Vehicle Insurance" },
+                    { key:"registration_expiry", label:"Registration" },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <label className="text-xs text-[#7A6F62] w-36 flex-shrink-0">{label}</label>
+                      <input type="date" value={expiryFields[key]||""} onChange={e=>setExpiryFields((f:any)=>({...f,[key]:e.target.value}))}
+                        className="flex-1 text-xs border border-[#E8E0D0] rounded-lg px-2 py-1.5 text-[#1C1611] focus:outline-none focus:border-[#C9A84C]" />
+                    </div>
+                  ))}
+                  <button onClick={handleSaveExpiry} disabled={savingExpiry} className="btn-gold text-xs py-1.5 px-4 disabled:opacity-60">{savingExpiry?"Saving…":"Save Dates"}</button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {[
+                    { label:"Driver's Licence",   date: viewing.license_expiry },
+                    { label:"Vehicle Insurance",  date: viewing.insurance_expiry },
+                    { label:"Registration",       date: viewing.registration_expiry },
+                  ].map(({ label, date }) => (
+                    <div key={label} className="flex justify-between items-center">
+                      <span className="text-xs text-[#7A6F62]">{label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#1C1611] font-mono">{date || "Not set"}</span>
+                        {date && <ExpiryBadge date={date} label="" />}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
