@@ -48,9 +48,18 @@ export async function POST(req: NextRequest) {
 
     // ── Signup: confirm the user's email in Supabase and create a session ────
     if (type === "signup") {
-      // Get user by email and confirm them
-      const { data: { users } } = await adminSb.auth.admin.listUsers();
-      const user = users?.find((u: any) => u.email === email.trim().toLowerCase());
+      // Find user by email — use getUserByEmail for reliability
+      let user: any = null;
+      try {
+        // Try direct lookup first (most reliable)
+        const { data: found } = await (adminSb.auth.admin as any).getUserByEmail?.(email.trim().toLowerCase()) ?? {};
+        if (found?.user) user = found.user;
+      } catch {}
+      // Fallback to list search
+      if (!user) {
+        const { data: { users } } = await adminSb.auth.admin.listUsers({ perPage: 1000 });
+        user = users?.find((u: any) => u.email?.toLowerCase() === email.trim().toLowerCase());
+      }
 
       if (user && !user.email_confirmed_at) {
         await adminSb.auth.admin.updateUserById(user.id, {
