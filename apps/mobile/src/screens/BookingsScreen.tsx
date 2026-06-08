@@ -1,44 +1,57 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, ActivityIndicator } from "react-native";
-import { useTheme } from "../lib/ThemeContext";
-import { COLORS } from "../lib/theme";
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  SafeAreaView, RefreshControl, ActivityIndicator, StatusBar,
+} from "react-native";
 import { supabase } from "../lib/supabase";
+import { API_BASE } from "../lib/config";
 
-import { API_BASE as API } from "../lib/config";
+const GOLD   = "#C9A84C";
+const BLACK  = "#09090B";
+const CARD   = "#17171A";
+const MUTED  = "#1E1E22";
+const BORDER = "#2A2A30";
+const WHITE  = "#FFFFFF";
+const GRAY   = "#6B7280";
 
-const STATUS_COLOR: Record<string, string> = {
-  pending:        "#FBBF24",
-  confirmed:      "#60A5FA",
-  driver_assigned:"#A78BFA",
-  in_progress:    COLORS.goldLight,
-  completed:      COLORS.green,
-  cancelled:      COLORS.red,
+const STATUS: Record<string, { label: string; color: string; icon: string }> = {
+  pending:         { label: "Pending",         color: "#FBBF24", icon: "⏳" },
+  confirmed:       { label: "Confirmed",       color: "#60A5FA", icon: "✅" },
+  driver_assigned: { label: "Driver Assigned", color: "#A78BFA", icon: "🚗" },
+  in_progress:     { label: "In Progress",     color: GOLD,      icon: "🟡" },
+  completed:       { label: "Completed",       color: "#4ADE80", icon: "✓"  },
+  cancelled:       { label: "Cancelled",       color: "#F87171", icon: "✕"  },
 };
 
-const FILTERS = ["all","upcoming","completed","cancelled"];
+const FILTERS = [
+  { key: "all",       label: "All"       },
+  { key: "upcoming",  label: "Upcoming"  },
+  { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
+];
 
 export default function BookingsScreen({ navigation }: any) {
-  const { colors } = useTheme();
   const [bookings,   setBookings]   = useState<any[]>([]);
   const [filter,     setFilter]     = useState("all");
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState("");
   const [liveActive, setLiveActive] = useState(false);
-  const channelRef = useRef<ReturnType<typeof supabase.channel>|null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError("");
     try {
-      const statusParam = filter === "all" ? "" : filter === "upcoming"
-        ? "pending,confirmed,driver_assigned,in_progress" : filter;
-      const res  = await fetch(`${API}/api/booking/list?status=${statusParam}&limit=20`);
+      const statusParam = filter === "upcoming"
+        ? "pending,confirmed,driver_assigned,in_progress"
+        : filter === "all" ? "" : filter;
+      const res  = await fetch(`${API_BASE}/api/booking/list?status=${statusParam}&limit=30`);
       const data = await res.json();
       setBookings(data.bookings || []);
     } catch {
-      setError("Could not load bookings. Check your connection.");
+      setError("Could not load bookings. Pull down to retry.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -47,125 +60,152 @@ export default function BookingsScreen({ navigation }: any) {
 
   useEffect(() => {
     load();
-
-    // Subscribe to realtime bookings updates
-    const channel = supabase
-      .channel("bookings-screen")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "bookings" },
-        (payload) => {
-          setBookings(prev => [payload.new as any, ...prev]);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "bookings" },
-        (payload) => {
-          setBookings(prev =>
-            prev.map(b => b.id === payload.new.id ? { ...b, ...payload.new } : b)
-          );
-        }
-      )
-      .subscribe((status) => {
-        setLiveActive(status === "SUBSCRIBED");
-      });
-
+    const channel = supabase.channel("bookings-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, payload => {
+        if (payload.eventType === "INSERT") setBookings(p => [payload.new as any, ...p]);
+        if (payload.eventType === "UPDATE") setBookings(p =>
+          p.map(b => b.id === payload.new.id ? { ...b, ...payload.new } : b));
+      })
+      .subscribe(status => setLiveActive(status === "SUBSCRIBED"));
     channelRef.current = channel;
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      setLiveActive(false);
-    };
+    return () => { if (channelRef.current) supabase.removeChannel(channelRef.current); };
   }, [load]);
 
+  const formatDate = (d: string) => {
+    if (!d) return "—";
+    try {
+      return new Date(d).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
+    } catch { return d; }
+  };
+
+  const shortId = (id: string) => id ? `#${id.slice(0, 8).toUpperCase()}` : "—";
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.black }]}>
+    <SafeAreaView style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={BLACK} />
+
+      {/* ── Header ─────────────────────────────────────── */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          {liveActive && <View style={[styles.liveDot, { backgroundColor: colors.green }]} />}
-          <Text style={[styles.title, { color: colors.white }]}>My Bookings</Text>
+          <Text style={styles.title}>My Bookings</Text>
+          {liveActive && (
+            <View style={styles.livePill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveText}>Live</Text>
+            </View>
+          )}
         </View>
-        <TouchableOpacity style={[styles.newBtn, { backgroundColor: colors.gold }]} onPress={() => navigation.navigate("Book")}>
-          <Text style={[styles.newBtnText, { color: colors.black }]}>+ New</Text>
+        <TouchableOpacity
+          style={styles.newBtn}
+          onPress={() => navigation.navigate("Book")}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.newBtnText}>+ Book</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Filters */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersRow} contentContainerStyle={{ paddingHorizontal:16, gap:8 }}>
+      {/* ── Filter Tabs ────────────────────────────────── */}
+      <ScrollView
+        horizontal showsHorizontalScrollIndicator={false}
+        style={styles.filterBar}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+      >
         {FILTERS.map(f => (
           <TouchableOpacity
-            key={f}
-            style={[
-              styles.filterBtn,
-              { backgroundColor: colors.darkMuted },
-              filter === f && { backgroundColor: `${colors.gold}25`, borderWidth: 1, borderColor: `${colors.gold}50` },
-            ]}
-            onPress={() => setFilter(f)}
+            key={f.key}
+            style={[styles.filterBtn, filter === f.key && styles.filterBtnActive]}
+            onPress={() => setFilter(f.key)}
           >
-            <Text style={[styles.filterText, { color: colors.gray500 }, filter === f && { color: colors.gold }]}>
-              {f.charAt(0).toUpperCase()+f.slice(1)}
+            <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
+              {f.label}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
+      {/* ── Content ────────────────────────────────────── */}
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.gold} size="large" />
-          <Text style={[styles.loadingText, { color: colors.gray500 }]}>Loading bookings…</Text>
+          <ActivityIndicator color={GOLD} size="large" />
+          <Text style={styles.loadingText}>Loading your rides…</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={{ fontSize:16, marginBottom:12, color: colors.gray400 }}>Warning</Text>
-          <Text style={[styles.errorText, { color: colors.gray400 }]}>{error}</Text>
-          <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.gold }]} onPress={() => load()}>
-            <Text style={[styles.retryText, { color: colors.black }]}>Try Again</Text>
+          <Text style={styles.emptyIcon}>⚠️</Text>
+          <Text style={styles.emptyTitle}>Something went wrong</Text>
+          <Text style={styles.emptySub}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+            <Text style={styles.retryText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={{ padding:16, paddingBottom:30 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.gold} />}
+          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={GOLD} />
+          }
+          showsVerticalScrollIndicator={false}
         >
           {bookings.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={{ fontSize:16, marginBottom:12, color: colors.gray500 }}>No rides yet</Text>
-              <Text style={[styles.emptyText, { color: colors.white }]}>No bookings found</Text>
-              <Text style={[styles.emptySub, { color: colors.gray500 }]}>{filter!=="all" ? `No ${filter} bookings yet.` : "Book your first luxury ride!"}</Text>
-              <TouchableOpacity style={[styles.emptyBtn, { backgroundColor: colors.gold }]} onPress={() => navigation.navigate("Book")}>
-                <Text style={[styles.emptyBtnText, { color: colors.black }]}>Book a Ride →</Text>
+              <Text style={styles.emptyIcon}>🚗</Text>
+              <Text style={styles.emptyTitle}>
+                {filter === "all" ? "No bookings yet" : `No ${filter} rides`}
+              </Text>
+              <Text style={styles.emptySub}>
+                {filter === "all"
+                  ? "Book your first premium ride and travel in style."
+                  : `You have no ${filter} bookings.`}
+              </Text>
+              <TouchableOpacity style={styles.bookNowBtn} onPress={() => navigation.navigate("Book")}>
+                <Text style={styles.bookNowText}>Book a Ride  →</Text>
               </TouchableOpacity>
             </View>
-          ) : bookings.map((b: any) => (
-            <TouchableOpacity
-              key={b.id}
-              style={[styles.card, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}
-              onPress={() => navigation.navigate("BookingDetail", { booking: b })}
-              activeOpacity={0.85}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={[styles.bookingId, { color: colors.gray500 }]}>{b.id}</Text>
-                <View style={[styles.statusBadge, { backgroundColor:`${STATUS_COLOR[b.status]||"#9CA3AF"}20` }]}>
-                  <Text style={[styles.statusText, { color:STATUS_COLOR[b.status]||"#9CA3AF" }]}>
-                    {b.status?.replace("_"," ")}
+          ) : (
+            bookings.map((b: any) => {
+              const s = STATUS[b.status] ?? { label: b.status, color: GRAY, icon: "·" };
+              return (
+                <TouchableOpacity
+                  key={b.id}
+                  style={styles.card}
+                  onPress={() => navigation.navigate("BookingDetail", { booking: b })}
+                  activeOpacity={0.85}
+                >
+                  {/* Card header */}
+                  <View style={styles.cardTop}>
+                    <Text style={styles.bookingId}>{shortId(b.id)}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: `${s.color}18` }]}>
+                      <Text style={styles.statusIcon}>{s.icon}</Text>
+                      <Text style={[styles.statusText, { color: s.color }]}>{s.label}</Text>
+                    </View>
+                  </View>
+
+                  {/* Route */}
+                  <Text style={styles.route} numberOfLines={2}>
+                    {b.pickup_address || b.pickup || "—"}
+                    {"  →  "}
+                    {b.dropoff_address || b.dropoff || "—"}
                   </Text>
-                </View>
-              </View>
-              <Text style={[styles.route, { color: colors.white }]}>{b.pickup_address||b.pickup} → {b.dropoff_address||b.dropoff}</Text>
-              <Text style={[styles.sub, { color: colors.gray500 }]}>
-                {b.scheduled_at ? new Date(b.scheduled_at).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short"}) : b.date}
-                {" · "}{b.vehicle_category||b.vehicle}
-              </Text>
-              <View style={[styles.cardFooter, { borderTopColor: colors.darkBorder }]}>
-                <Text style={[styles.amount, { color: colors.white }]}>${(b.total_amount||b.amount||0).toFixed(2)}</Text>
-                <Text style={[styles.viewBtn, { color: colors.gold }]}>View Details →</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+
+                  {/* Meta */}
+                  <Text style={styles.meta}>
+                    {formatDate(b.scheduled_at || b.date)}
+                    {b.vehicle_category || b.vehicle ? `  ·  ${b.vehicle_category || b.vehicle}` : ""}
+                  </Text>
+
+                  {/* Footer */}
+                  <View style={styles.cardFooter}>
+                    <Text style={styles.amount}>
+                      ${(b.total_amount || b.amount || 0).toFixed(2)}
+                    </Text>
+                    <View style={styles.detailBtn}>
+                      <Text style={styles.detailBtnText}>View Details  →</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -173,34 +213,68 @@ export default function BookingsScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container:       { flex:1 },
-  header:          { flexDirection:"row", justifyContent:"space-between", alignItems:"center", padding:20, paddingBottom:12 },
-  headerLeft:      { flexDirection:"row", alignItems:"center", gap:8 },
-  title:           { fontSize:24, fontWeight:"700" },
-  liveDot:         { width:8, height:8, borderRadius:4 },
-  newBtn:          { borderRadius:10, paddingHorizontal:14, paddingVertical:8 },
-  newBtnText:      { fontWeight:"700", fontSize:14 },
-  filtersRow:      { marginBottom:8, maxHeight:52 },
-  filterBtn:       { paddingHorizontal:16, paddingVertical:8, borderRadius:20 },
-  filterText:      { fontSize:13, fontWeight:"500" },
-  center:          { flex:1, alignItems:"center", justifyContent:"center", paddingBottom:80 },
-  loadingText:     { marginTop:12, fontSize:14 },
-  errorText:       { fontSize:15, textAlign:"center", marginBottom:16 },
-  retryBtn:        { borderRadius:12, paddingHorizontal:24, paddingVertical:12 },
-  retryText:       { fontWeight:"700", fontSize:14 },
-  empty:           { alignItems:"center", paddingTop:40 },
-  emptyText:       { fontSize:18, fontWeight:"700", marginBottom:6 },
-  emptySub:        { fontSize:14, marginBottom:20 },
-  emptyBtn:        { borderRadius:14, paddingHorizontal:24, paddingVertical:12 },
-  emptyBtnText:    { fontWeight:"700", fontSize:15 },
-  card:            { borderRadius:16, padding:16, marginBottom:12, borderWidth:1 },
-  cardHeader:      { flexDirection:"row", justifyContent:"space-between", alignItems:"center", marginBottom:8 },
-  bookingId:       { fontSize:11, fontFamily:"monospace" },
-  statusBadge:     { borderRadius:8, paddingHorizontal:8, paddingVertical:3 },
-  statusText:      { fontSize:11, fontWeight:"700", textTransform:"capitalize" },
-  route:           { fontWeight:"600", fontSize:15, marginBottom:4 },
-  sub:             { fontSize:12, marginBottom:12 },
-  cardFooter:      { flexDirection:"row", justifyContent:"space-between", alignItems:"center", borderTopWidth:1, paddingTop:12 },
-  amount:          { fontWeight:"700", fontSize:18 },
-  viewBtn:         { fontSize:13, fontWeight:"600" },
+  root: { flex: 1, backgroundColor: BLACK },
+
+  // Header
+  header:     { flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+                paddingHorizontal: 20, paddingVertical: 16 },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  title:      { color: WHITE, fontSize: 24, fontWeight: "900" },
+  livePill:   { flexDirection: "row", alignItems: "center", gap: 5,
+                backgroundColor: "rgba(74,222,128,0.1)", borderRadius: 20,
+                paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1,
+                borderColor: "rgba(74,222,128,0.25)" },
+  liveDot:    { width: 6, height: 6, borderRadius: 3, backgroundColor: "#4ADE80" },
+  liveText:   { color: "#4ADE80", fontSize: 10, fontWeight: "700" },
+  newBtn:     { backgroundColor: GOLD, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 9,
+                shadowColor: GOLD, shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  newBtnText: { color: BLACK, fontWeight: "800", fontSize: 14 },
+
+  // Filters
+  filterBar:      { maxHeight: 52, marginBottom: 6 },
+  filterBtn:      { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20,
+                    backgroundColor: MUTED, borderWidth: 1, borderColor: "transparent" },
+  filterBtnActive:{ backgroundColor: "rgba(201,168,76,0.12)", borderColor: "rgba(201,168,76,0.4)" },
+  filterText:     { color: GRAY, fontSize: 13, fontWeight: "600" },
+  filterTextActive:{ color: GOLD },
+
+  // Loading / Error / Empty
+  center:      { flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: 80 },
+  loadingText: { color: GRAY, fontSize: 14, marginTop: 14 },
+  emptyIcon:   { fontSize: 52, marginBottom: 16 },
+  emptyTitle:  { color: WHITE, fontSize: 20, fontWeight: "800", marginBottom: 8 },
+  emptySub:    { color: GRAY, fontSize: 14, textAlign: "center", marginBottom: 24, paddingHorizontal: 32 },
+  retryBtn:    { backgroundColor: GOLD, borderRadius: 14, paddingHorizontal: 28, paddingVertical: 13 },
+  retryText:   { color: BLACK, fontWeight: "800", fontSize: 15 },
+
+  // Empty state
+  empty:      { alignItems: "center", paddingTop: 60 },
+  bookNowBtn: { backgroundColor: GOLD, borderRadius: 14, paddingHorizontal: 28, paddingVertical: 14,
+                shadowColor: GOLD, shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  bookNowText:{ color: BLACK, fontWeight: "900", fontSize: 15 },
+
+  // Booking card
+  card: { backgroundColor: CARD, borderRadius: 18, marginBottom: 12, borderWidth: 1,
+          borderColor: BORDER, overflow: "hidden" },
+  cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+             paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10,
+             borderBottomWidth: 1, borderBottomColor: BORDER },
+  bookingId:   { color: GRAY, fontSize: 11, fontWeight: "700", fontFamily: "monospace" },
+  statusBadge: { flexDirection: "row", alignItems: "center", gap: 5,
+                 borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4 },
+  statusIcon:  { fontSize: 11 },
+  statusText:  { fontSize: 11, fontWeight: "700" },
+  route:       { color: WHITE, fontWeight: "700", fontSize: 15, paddingHorizontal: 16,
+                 paddingTop: 12, paddingBottom: 4 },
+  meta:        { color: GRAY, fontSize: 12, paddingHorizontal: 16, paddingBottom: 12 },
+  cardFooter:  { flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+                 paddingHorizontal: 16, paddingVertical: 12,
+                 borderTopWidth: 1, borderTopColor: BORDER },
+  amount:      { color: GOLD, fontWeight: "900", fontSize: 20 },
+  detailBtn:   { backgroundColor: "rgba(201,168,76,0.1)", borderRadius: 10,
+                 paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1,
+                 borderColor: "rgba(201,168,76,0.25)" },
+  detailBtnText:{ color: GOLD, fontSize: 12, fontWeight: "700" },
 });

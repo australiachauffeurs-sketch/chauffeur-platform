@@ -1,9 +1,33 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView, Alert, Switch } from "react-native";
+import {
+  View, Text, TouchableOpacity, ScrollView, StyleSheet,
+  SafeAreaView, Alert, ActivityIndicator, StatusBar,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CommonActions } from "@react-navigation/native";
-import { useTheme } from "../lib/ThemeContext";
+import { supabase } from "../lib/supabase";
 import { API_BASE } from "../lib/config";
+
+const GOLD   = "#C9A84C";
+const BLACK  = "#09090B";
+const CARD   = "#17171A";
+const MUTED  = "#1E1E22";
+const BORDER = "#2A2A30";
+const WHITE  = "#FFFFFF";
+const GRAY   = "#6B7280";
+const GRAY2  = "#9CA3AF";
+const GREEN  = "#4ADE80";
+
+const MENU_ITEMS = [
+  { icon: "📋", label: "My Bookings",       sub: "View all your trips",      screen: "Bookings"       },
+  { icon: "💳", label: "Payment Methods",   sub: "Cards & invoicing",        screen: "PaymentMethods" },
+  { icon: "⭐", label: "My Reviews",        sub: "Ratings & feedback",       screen: "Reviews"        },
+  { icon: "📍", label: "Saved Addresses",   sub: "Home, work & favourites",  screen: "SavedAddresses" },
+  { icon: "🔔", label: "Notifications",     sub: "Manage alerts",            screen: "Notifications"  },
+  { icon: "🔒", label: "Privacy & Security",sub: "Account settings",         screen: "Settings"       },
+  { icon: "🎁", label: "Refer a Friend",    sub: "Give $20, get $20",        screen: "Referral"       },
+  { icon: "💬", label: "Support",           sub: "24/7 live assistance",     screen: "Support"        },
+];
 
 interface LoyaltyData {
   points: number;
@@ -11,39 +35,48 @@ interface LoyaltyData {
   nextTier: { next: string; needed: number } | null;
 }
 
-const MENU_ITEMS = [
-  { abbr:"BK", label:"My Bookings",        sub:"View all trips",        screen:"Bookings"       },
-  { abbr:"PM", label:"Payment Methods",    sub:"Cards & invoicing",     screen:"PaymentMethods" },
-  { abbr:"RV", label:"My Reviews",         sub:"Ratings & feedback",    screen:"Reviews"        },
-  { abbr:"AD", label:"Saved Addresses",    sub:"Home, work & more",     screen:"SavedAddresses" },
-  { abbr:"NT", label:"Notifications",      sub:"Manage alerts",         screen:"Notifications"  },
-  { abbr:"PS", label:"Privacy & Security", sub:"Account settings",      screen:"Settings"       },
-  { abbr:"RF", label:"Refer a Friend",      sub:"Give $20, get $20",     screen:"Referral"       },
-  { abbr:"SP", label:"Support",            sub:"24/7 assistance",       screen:"Support"        },
-];
-
 export default function ProfileScreen({ navigation }: any) {
-  const { colors, isDark, toggleTheme } = useTheme();
-  const [user, setUser] = useState<{ name: string; email: string; id?: string } | null>(null);
-  const [loyalty, setLoyalty] = useState<LoyaltyData | null>(null);
+  const [user,      setUser]      = useState<{ name: string; email: string; id?: string } | null>(null);
+  const [loyalty,   setLoyalty]   = useState<LoyaltyData | null>(null);
   const [redeeming, setRedeeming] = useState(false);
+  const [stats,     setStats]     = useState({ trips: 0, rating: "—", spent: "$0" });
 
   useEffect(() => {
     (async () => {
-      const raw = await AsyncStorage.getItem("ec_user");
-      if (raw) {
+      try {
+        const raw = await AsyncStorage.getItem("ec_user");
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+
+        const userId = parsed.id || "demo";
+
+        // Load loyalty points
         try {
-          const parsed = JSON.parse(raw);
-          setUser(parsed);
-          // Load loyalty
-          const userId = parsed.id || "demo-user";
-          const res = await fetch(`${API_BASE}/api/loyalty?userId=${userId}`);
-          const json = await res.json();
-          setLoyalty(json);
+          const r = await fetch(`${API_BASE}/api/loyalty?userId=${userId}`);
+          const j = await r.json();
+          setLoyalty(j);
         } catch {
           setLoyalty({ points: 350, tier: "Silver", nextTier: { next: "Gold", needed: 150 } });
         }
-      }
+
+        // Load booking stats from Supabase
+        if (parsed.id) {
+          const { data } = await supabase
+            .from("bookings")
+            .select("total_amount, status")
+            .eq("customer_id", parsed.id);
+          if (data) {
+            const completed = data.filter(b => b.status === "completed");
+            const total = completed.reduce((s, b) => s + (b.total_amount || 0), 0);
+            setStats({
+              trips: data.length,
+              rating: "4.9★",
+              spent: `$${total.toFixed(0)}`,
+            });
+          }
+        }
+      } catch {}
     })();
   }, []);
 
@@ -51,8 +84,8 @@ export default function ProfileScreen({ navigation }: any) {
     if (!loyalty || loyalty.points < 100) return;
     setRedeeming(true);
     try {
-      const userId = user?.id || "demo-user";
-      const res = await fetch(`${API_BASE}/api/loyalty`, {
+      const userId = user?.id || "demo";
+      const res  = await fetch(`${API_BASE}/api/loyalty`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "redeem", userId, points: 100 }),
@@ -60,213 +93,229 @@ export default function ProfileScreen({ navigation }: any) {
       const json = await res.json();
       if (json.ok) {
         setLoyalty(prev => prev ? { ...prev, points: json.newPoints } : prev);
-        Alert.alert("Redeemed!", `$${json.creditEarned?.toFixed(2) || "5.00"} credit added to your account.`);
+        Alert.alert("🎉 Redeemed!", `$${json.creditEarned?.toFixed(2) || "5.00"} credit added to your account.`);
       }
-    } catch { /* swallow */ }
+    } catch {}
     finally { setRedeeming(false); }
   };
 
   const tierColor = (tier: string) => {
     if (tier === "Platinum") return "#A855F7";
-    if (tier === "Gold")     return colors.gold;
+    if (tier === "Gold")     return GOLD;
     return "#9CA3AF";
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Sign out",
-      "Are you sure you want to sign out?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign Out", style: "destructive",
-          onPress: async () => {
-            await AsyncStorage.removeItem("ec_user");
-            await AsyncStorage.removeItem("ec_pending_user");
-            navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: "Login" }] }));
-          },
-        },
-      ]
-    );
+  const tierIcon = (tier: string) => {
+    if (tier === "Platinum") return "💎";
+    if (tier === "Gold")     return "🥇";
+    return "🥈";
   };
 
+  const handleLogout = () => {
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out", style: "destructive",
+        onPress: async () => {
+          await supabase.auth.signOut();
+          await AsyncStorage.removeItem("ec_user");
+          await AsyncStorage.removeItem("ec_pending_user");
+          navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: "Login" }] }));
+        },
+      },
+    ]);
+  };
+
+  const initials = (user?.name ?? "U")
+    .split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.black }]}>
-      <ScrollView>
-        {/* Profile hero */}
+    <SafeAreaView style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={BLACK} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+
+        {/* ── Hero ───────────────────────────────────────────── */}
         <View style={styles.hero}>
-          <View style={[styles.avatar, { backgroundColor: colors.darkMuted, borderColor: colors.gold }]}>
-            <Text style={[styles.avatarText, { color: colors.gold }]}>{(user?.name ?? "U").charAt(0).toUpperCase()}</Text>
+          {/* Gold glow */}
+          <View style={styles.heroGlow} />
+
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+            <View style={styles.avatarOnline} />
           </View>
-          <Text style={[styles.name, { color: colors.white }]}>{user?.name ?? "Guest User"}</Text>
-          <Text style={[styles.email, { color: colors.gray500 }]}>{user?.email ?? "Not signed in"}</Text>
-          <View style={[styles.badge, { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}30` }]}>
-            <Text style={[styles.badgeText, { color: colors.gold }]}>Corporate Account</Text>
-          </View>
-          <TouchableOpacity style={[styles.editProfileBtn, { backgroundColor: colors.darkMuted, borderColor: colors.darkBorder }]} onPress={() => navigation.navigate("EditProfile")}>
-            <Text style={[styles.editProfileText, { color: colors.white }]}>Edit Profile</Text>
+
+          <Text style={styles.userName}>{user?.name ?? "Guest User"}</Text>
+          <Text style={styles.userEmail}>{user?.email ?? "Not signed in"}</Text>
+
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => navigation.navigate("EditProfile")}
+          >
+            <Text style={styles.editBtnText}>✏️  Edit Profile</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Stats */}
+        {/* ── Stats Row ──────────────────────────────────────── */}
         <View style={styles.statsRow}>
           {[
-            { value:"12",    label:"Trips"       },
-            { value:"4.9★",  label:"Rating"      },
-            { value:"$1,840",label:"Total Spent" },
+            { icon: "🚗", val: String(stats.trips), lbl: "Trips" },
+            { icon: "⭐", val: stats.rating,         lbl: "Rating" },
+            { icon: "💰", val: stats.spent,          lbl: "Spent"  },
           ].map(s => (
-            <View key={s.label} style={[styles.statBox, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
-              <Text style={[styles.statValue, { color: colors.gold }]}>{s.value}</Text>
-              <Text style={[styles.statLabel, { color: colors.gray500 }]}>{s.label}</Text>
+            <View key={s.lbl} style={styles.statCard}>
+              <Text style={styles.statIcon}>{s.icon}</Text>
+              <Text style={styles.statVal}>{s.val}</Text>
+              <Text style={styles.statLbl}>{s.lbl}</Text>
             </View>
           ))}
         </View>
 
-        {/* Loyalty Card */}
+        {/* ── Loyalty Card ───────────────────────────────────── */}
         {loyalty && (
-          <View style={[styles.loyaltyCard, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
-            <View style={styles.loyaltyTop}>
+          <View style={styles.loyaltyCard}>
+            <View style={styles.loyaltyTopRow}>
               <View>
-                <Text style={[styles.loyaltyLabel, { color: colors.gray400 }]}>Loyalty Points</Text>
-                <Text style={[styles.loyaltyPoints, { color: colors.gold }]}>{loyalty.points.toLocaleString()}</Text>
+                <Text style={styles.loyaltyLabel}>Loyalty Points</Text>
+                <Text style={styles.loyaltyPts}>{loyalty.points.toLocaleString()}</Text>
               </View>
-              <View style={[styles.tierBadge, { backgroundColor: `${tierColor(loyalty.tier)}20`, borderColor: `${tierColor(loyalty.tier)}40` }]}>
-                <Text style={[styles.tierText, { color: tierColor(loyalty.tier) }]}>{loyalty.tier}</Text>
+              <View style={[styles.tierBadge, { borderColor: `${tierColor(loyalty.tier)}50`, backgroundColor: `${tierColor(loyalty.tier)}12` }]}>
+                <Text style={styles.tierIcon}>{tierIcon(loyalty.tier)}</Text>
+                <Text style={[styles.tierName, { color: tierColor(loyalty.tier) }]}>{loyalty.tier}</Text>
               </View>
             </View>
 
-            {/* Progress bar */}
             {loyalty.nextTier && (
               <View style={styles.progressWrap}>
-                <View style={[styles.progressTrack, { backgroundColor: colors.darkBorder }]}>
-                  <View style={[
-                    styles.progressFill,
-                    {
-                      backgroundColor: colors.gold,
-                      width: `${Math.min(100, loyalty.tier === "Silver" ? (loyalty.points / 500) * 100 : ((loyalty.points - 500) / 1500) * 100)}%` as any,
-                    }
-                  ]} />
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, {
+                    width: `${Math.min(100, loyalty.tier === "Silver"
+                      ? (loyalty.points / 500) * 100
+                      : ((loyalty.points - 500) / 1500) * 100)}%` as any,
+                  }]} />
                 </View>
-                <Text style={[styles.progressLabel, { color: colors.gray500 }]}>
+                <Text style={styles.progressHint}>
                   {loyalty.nextTier.needed} pts to {loyalty.nextTier.next}
                 </Text>
               </View>
             )}
 
             <View style={styles.loyaltyFooter}>
-              <Text style={[styles.loyaltyHint, { color: colors.gray500 }]}>100 pts = $5 credit</Text>
+              <Text style={styles.ptsRate}>100 pts = $5 account credit</Text>
               <TouchableOpacity
-                style={[
-                  styles.redeemBtn,
-                  { borderColor: colors.gold },
-                  loyalty.points < 100 && { opacity: 0.4 },
-                ]}
+                style={[styles.redeemBtn, loyalty.points < 100 && { opacity: 0.35 }]}
                 onPress={handleRedeem}
                 disabled={loyalty.points < 100 || redeeming}
               >
-                <Text style={[styles.redeemBtnText, { color: colors.gold }]}>
-                  {redeeming ? "…" : "Redeem"}
-                </Text>
+                {redeeming
+                  ? <ActivityIndicator color={GOLD} size="small" />
+                  : <Text style={styles.redeemText}>Redeem</Text>
+                }
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Menu */}
-        <View style={[styles.menu, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
+        {/* ── Menu ───────────────────────────────────────────── */}
+        <View style={styles.menuCard}>
           {MENU_ITEMS.map((item, i) => (
             <TouchableOpacity
               key={item.label}
-              style={[
-                styles.menuItem,
-                { borderBottomColor: colors.darkBorder },
-                i === MENU_ITEMS.length - 1 && { borderBottomWidth: 0 },
-              ]}
+              style={[styles.menuRow, i < MENU_ITEMS.length - 1 && styles.menuDivider]}
               onPress={() => navigation.navigate(item.screen)}
+              activeOpacity={0.7}
             >
-              <View style={[styles.menuIconBox, { backgroundColor: `${colors.gold}12`, borderColor: `${colors.gold}25` }]}>
-                <Text style={[styles.menuIconText, { color: colors.gold }]}>{item.abbr}</Text>
+              <View style={styles.menuIconWrap}>
+                <Text style={styles.menuIcon}>{item.icon}</Text>
               </View>
-              <View style={{ flex:1 }}>
-                <Text style={[styles.menuLabel, { color: colors.white }]}>{item.label}</Text>
-                <Text style={[styles.menuSub, { color: colors.gray500 }]}>{item.sub}</Text>
+              <View style={styles.menuTextWrap}>
+                <Text style={styles.menuLabel}>{item.label}</Text>
+                <Text style={styles.menuSub}>{item.sub}</Text>
               </View>
-              <Text style={[styles.chevron, { color: colors.gray500 }]}>›</Text>
+              <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Theme Toggle */}
-        <View style={[styles.themeRow, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
-          <View style={styles.themeLeft}>
-            <View style={[styles.menuIconBox, { backgroundColor: `${colors.gold}12`, borderColor: `${colors.gold}25` }]}>
-              <Text style={[styles.menuIconText, { color: colors.gold }]}>{isDark ? "DK" : "LT"}</Text>
-            </View>
-            <View>
-              <Text style={[styles.menuLabel, { color: colors.white }]}>
-                {isDark ? "Dark Mode" : "Light Mode"}
-              </Text>
-              <Text style={[styles.menuSub, { color: colors.gray500 }]}>Tap to switch theme</Text>
-            </View>
-          </View>
-          <Switch
-            value={!isDark}
-            onValueChange={toggleTheme}
-            trackColor={{ false: colors.darkBorder, true: `${colors.gold}60` }}
-            thumbColor={isDark ? colors.gray400 : colors.gold}
-          />
-        </View>
-
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        {/* ── Sign Out ───────────────────────────────────────── */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <Text style={styles.logoutIcon}>🚪</Text>
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.version, { color: colors.gray500 }]}>Elite Chauffeurs v1.0.0 · Australia</Text>
+        <Text style={styles.version}>Elite Chauffeurs v1.0.0 · Australia</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:      { flex:1 },
-  hero:           { alignItems:"center", padding:28, paddingBottom:24 },
-  avatar:         { width:80, height:80, borderRadius:40, borderWidth:3, justifyContent:"center", alignItems:"center", marginBottom:14 },
-  avatarText:     { fontSize:32, fontWeight:"700" },
-  name:           { fontSize:22, fontWeight:"700", marginBottom:4 },
-  email:          { fontSize:13, marginBottom:12 },
-  badge:          { borderRadius:20, paddingHorizontal:14, paddingVertical:5, borderWidth:1 },
-  badgeText:      { fontSize:12, fontWeight:"600" },
-  editProfileBtn: { marginTop:12, borderRadius:12, paddingHorizontal:20, paddingVertical:8, borderWidth:1 },
-  editProfileText:{ fontSize:13, fontWeight:"600" },
-  statsRow:       { flexDirection:"row", marginHorizontal:16, marginBottom:20, gap:10 },
-  statBox:        { flex:1, borderRadius:14, padding:14, alignItems:"center", borderWidth:1 },
-  statValue:      { fontSize:18, fontWeight:"700", marginBottom:2 },
-  statLabel:      { fontSize:10 },
-  menu:           { marginHorizontal:16, borderRadius:18, overflow:"hidden", borderWidth:1, marginBottom:16 },
-  menuItem:       { flexDirection:"row", alignItems:"center", paddingVertical:14, paddingHorizontal:16, borderBottomWidth:1 },
-  menuIconBox:    { width:36, height:36, borderRadius:10, borderWidth:1, justifyContent:"center", alignItems:"center", marginRight:14 },
-  menuIconText:   { fontSize:9, fontWeight:"800", letterSpacing:0.5 },
-  menuLabel:      { fontSize:15, fontWeight:"500", marginBottom:2 },
-  menuSub:        { fontSize:11 },
-  chevron:        { fontSize:22 },
-  themeRow:       { flexDirection:"row", alignItems:"center", justifyContent:"space-between", padding:16, borderRadius:16, borderWidth:1, marginBottom:10, marginHorizontal:16 },
-  themeLeft:      { flexDirection:"row", alignItems:"center", gap:14 },
-  logoutBtn:      { marginHorizontal:16, borderRadius:14, borderWidth:1, borderColor:"#F87171", paddingVertical:14, alignItems:"center", marginBottom:12 },
-  logoutText:     { color:"#F87171", fontWeight:"700", fontSize:16 },
-  version:        { fontSize:11, textAlign:"center", paddingBottom:24 },
-  loyaltyCard:    { marginHorizontal:16, borderRadius:18, borderWidth:1, padding:18, marginBottom:16 },
-  loyaltyTop:     { flexDirection:"row", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 },
-  loyaltyLabel:   { fontSize:11, marginBottom:4 },
-  loyaltyPoints:  { fontSize:32, fontWeight:"900" },
-  tierBadge:      { borderRadius:20, paddingHorizontal:12, paddingVertical:5, borderWidth:1 },
-  tierText:       { fontSize:12, fontWeight:"700" },
-  progressWrap:   { marginBottom:14 },
-  progressTrack:  { height:6, borderRadius:3, overflow:"hidden", marginBottom:6 },
-  progressFill:   { height:6, borderRadius:3 },
-  progressLabel:  { fontSize:10 },
-  loyaltyFooter:  { flexDirection:"row", justifyContent:"space-between", alignItems:"center" },
-  loyaltyHint:    { fontSize:11 },
-  redeemBtn:      { borderRadius:10, borderWidth:1, paddingHorizontal:14, paddingVertical:7 },
-  redeemBtnText:  { fontSize:12, fontWeight:"700" },
+  root: { flex: 1, backgroundColor: BLACK },
+
+  // Hero
+  hero: { alignItems: "center", paddingTop: 32, paddingBottom: 28, paddingHorizontal: 24, position: "relative" },
+  heroGlow: { position: "absolute", top: 0, inset: 0, height: 220,
+    backgroundColor: "rgba(201,168,76,0.04)" },
+  avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: "rgba(201,168,76,0.15)",
+    borderWidth: 3, borderColor: GOLD, justifyContent: "center", alignItems: "center",
+    marginBottom: 16, shadowColor: GOLD, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4, shadowRadius: 16, elevation: 8 },
+  avatarText: { color: GOLD, fontSize: 30, fontWeight: "900" },
+  avatarOnline: { position: "absolute", bottom: 4, right: 4, width: 14, height: 14,
+    borderRadius: 7, backgroundColor: GREEN, borderWidth: 2.5, borderColor: BLACK },
+  userName: { color: WHITE, fontSize: 22, fontWeight: "800", marginBottom: 4 },
+  userEmail: { color: GRAY, fontSize: 13, marginBottom: 16 },
+  editBtn: { flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: MUTED, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 9,
+    borderWidth: 1, borderColor: BORDER },
+  editBtnText: { color: WHITE, fontSize: 13, fontWeight: "600" },
+
+  // Stats
+  statsRow: { flexDirection: "row", marginHorizontal: 16, marginBottom: 14, gap: 10 },
+  statCard: { flex: 1, backgroundColor: CARD, borderRadius: 16, borderWidth: 1,
+    borderColor: BORDER, alignItems: "center", paddingVertical: 14 },
+  statIcon: { fontSize: 20, marginBottom: 6 },
+  statVal:  { color: GOLD, fontSize: 17, fontWeight: "900", marginBottom: 2 },
+  statLbl:  { color: GRAY, fontSize: 10, fontWeight: "600" },
+
+  // Loyalty
+  loyaltyCard: { marginHorizontal: 16, marginBottom: 14, backgroundColor: CARD,
+    borderRadius: 20, borderWidth: 1, borderColor: "rgba(201,168,76,0.25)", padding: 18 },
+  loyaltyTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
+  loyaltyLabel:  { color: GRAY2, fontSize: 11, fontWeight: "600", marginBottom: 4 },
+  loyaltyPts:    { color: GOLD, fontSize: 36, fontWeight: "900" },
+  tierBadge:     { flexDirection: "row", alignItems: "center", gap: 5,
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1 },
+  tierIcon:  { fontSize: 14 },
+  tierName:  { fontSize: 13, fontWeight: "700" },
+  progressWrap:  { marginBottom: 14 },
+  progressTrack: { height: 5, borderRadius: 3, backgroundColor: BORDER, marginBottom: 6, overflow: "hidden" },
+  progressFill:  { height: "100%", backgroundColor: GOLD, borderRadius: 3 },
+  progressHint:  { color: GRAY, fontSize: 10 },
+  loyaltyFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  ptsRate:       { color: GRAY, fontSize: 11 },
+  redeemBtn:     { borderRadius: 10, borderWidth: 1, borderColor: "rgba(201,168,76,0.5)",
+    paddingHorizontal: 16, paddingVertical: 8 },
+  redeemText:    { color: GOLD, fontSize: 13, fontWeight: "700" },
+
+  // Menu
+  menuCard: { marginHorizontal: 16, marginBottom: 14, backgroundColor: CARD,
+    borderRadius: 20, borderWidth: 1, borderColor: BORDER, overflow: "hidden" },
+  menuRow:     { flexDirection: "row", alignItems: "center", paddingVertical: 15, paddingHorizontal: 16 },
+  menuDivider: { borderBottomWidth: 1, borderBottomColor: BORDER },
+  menuIconWrap:{ width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(201,168,76,0.08)",
+    borderWidth: 1, borderColor: "rgba(201,168,76,0.18)", justifyContent: "center",
+    alignItems: "center", marginRight: 14 },
+  menuIcon:     { fontSize: 18 },
+  menuTextWrap: { flex: 1 },
+  menuLabel:    { color: WHITE, fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  menuSub:      { color: GRAY, fontSize: 11 },
+  chevron:      { color: GRAY, fontSize: 24, fontWeight: "300" },
+
+  // Logout
+  logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    marginHorizontal: 16, borderRadius: 14, borderWidth: 1, borderColor: "rgba(248,113,113,0.3)",
+    backgroundColor: "rgba(248,113,113,0.05)", paddingVertical: 15, marginBottom: 14 },
+  logoutIcon: { fontSize: 18 },
+  logoutText: { color: "#F87171", fontWeight: "700", fontSize: 16 },
+  version:    { color: "#374151", fontSize: 11, textAlign: "center" },
 });

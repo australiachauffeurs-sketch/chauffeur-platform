@@ -4,36 +4,51 @@ import {
   StyleSheet, SafeAreaView, StatusBar, Dimensions,
   Image, Animated, Platform, FlatList,
 } from "react-native";
-import { useTheme } from "../lib/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
-// Car images carousel
+const GOLD    = "#C9A84C";
+const GOLD_DIM = "rgba(201,168,76,0.15)";
+const GOLD_BRD = "rgba(201,168,76,0.3)";
+const BLACK   = "#09090B";
+const SURFACE = "#111113";
+const CARD    = "#17171A";
+const MUTED   = "#1E1E22";
+const BORDER  = "#2A2A30";
+const WHITE   = "#FFFFFF";
+const GRAY    = "#6B7280";
+const GRAY2   = "#9CA3AF";
+const GREEN   = "#4ADE80";
+
 const CAR_SLIDES = [
   {
     id: "1",
-    uri: "https://images.unsplash.com/photo-1617814076668-8dfc6fe159ed?w=800&q=85",
+    uri: "https://images.unsplash.com/photo-1617814076668-8dfc6fe159ed?w=900&q=85",
+    category: "EXECUTIVE CLASS",
     label: "Executive Sedan",
     model: "Mercedes-Benz E-Class",
     price: "From $65",
   },
   {
     id: "2",
-    uri: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=800&q=85",
+    uri: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=85",
+    category: "LUXURY CLASS",
     label: "Luxury Sedan",
     model: "Mercedes-Benz S-Class",
     price: "From $130",
   },
   {
     id: "3",
-    uri: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=800&q=85",
+    uri: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=900&q=85",
+    category: "PREMIUM SUV",
     label: "Premium SUV",
     model: "Mercedes-Benz GLE",
     price: "From $85",
   },
   {
     id: "4",
-    uri: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=85",
+    uri: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=85",
+    category: "GROUP CLASS",
     label: "Executive Van",
     model: "Mercedes-Benz Viano",
     price: "From $100",
@@ -41,32 +56,24 @@ const CAR_SLIDES = [
 ];
 
 const SERVICES = [
-  { abbr: "AIR", label: "Airport",   type: "airport_transfer", color: "#1E3A5F" },
-  { abbr: "BIZ", label: "Corporate", type: "corporate",        color: "#1A2E1A" },
-  { abbr: "WED", label: "Wedding",   type: "wedding",          color: "#3D1A2E" },
-  { abbr: "EVT", label: "Events",    type: "special_event",    color: "#2E2A0A" },
-  { abbr: "HRS", label: "Hourly",    type: "hourly",           color: "#1A1A3D" },
+  { icon: "✈", abbr: "AIR", label: "Airport",   type: "airport_transfer" },
+  { icon: "💼", abbr: "BIZ", label: "Corporate", type: "corporate"        },
+  { icon: "💍", abbr: "WED", label: "Wedding",   type: "wedding"          },
+  { icon: "🎉", abbr: "EVT", label: "Events",    type: "special_event"    },
+  { icon: "⏱",  abbr: "HRS", label: "Hourly",   type: "hourly"           },
 ];
 
-const UPCOMING = {
-  route: "Sydney Airport → CBD",
-  date: "Today · 06:30 AM",
-  driver: "Marcus T.",
-  amount: "$142",
-};
-
 export default function HomeScreen({ navigation }: any) {
-  const { colors } = useTheme();
-  const [pickup,      setPickup]     = useState("");
-  const [dropoff,     setDropoff]    = useState("");
-  const [service,     setService]    = useState("airport_transfer");
+  const [pickup,      setPickup]      = useState("");
+  const [dropoff,     setDropoff]     = useState("");
+  const [service,     setService]     = useState("airport_transfer");
   const [activeSlide, setActiveSlide] = useState(0);
 
   const flatRef    = useRef<FlatList>(null);
   const scrollX    = useRef(new Animated.Value(0)).current;
   const slideTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fadeAnim   = useRef(new Animated.Value(1)).current;
 
-  // Auto-scroll carousel
   useEffect(() => {
     slideTimer.current = setInterval(() => {
       setActiveSlide(prev => {
@@ -74,28 +81,42 @@ export default function HomeScreen({ navigation }: any) {
         flatRef.current?.scrollToIndex({ index: next, animated: true });
         return next;
       });
-    }, 3500);
+    }, 4000);
     return () => { if (slideTimer.current) clearInterval(slideTimer.current); };
   }, []);
 
+  const restartTimer = () => {
+    if (slideTimer.current) clearInterval(slideTimer.current);
+    slideTimer.current = setInterval(() => {
+      setActiveSlide(prev => {
+        const next = (prev + 1) % CAR_SLIDES.length;
+        flatRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, 4000);
+  };
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.black }]}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.black} />
+    <SafeAreaView style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={BLACK} />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        contentContainerStyle={{ paddingBottom: 32 }}
+      >
 
-        {/* ── HERO WITH CAR CAROUSEL ─────────────────────────── */}
+        {/* ════════════════════════════════════════════
+            HERO CAROUSEL
+        ════════════════════════════════════════════ */}
         <View style={styles.hero}>
 
-          {/* Car image carousel */}
           <Animated.FlatList
             ref={flatRef}
             data={CAR_SLIDES}
             keyExtractor={item => item.id}
-            horizontal
-            pagingEnabled
+            horizontal pagingEnabled
             showsHorizontalScrollIndicator={false}
-            scrollEnabled={true}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { x: scrollX } } }],
               { useNativeDriver: false }
@@ -103,227 +124,241 @@ export default function HomeScreen({ navigation }: any) {
             onMomentumScrollEnd={e => {
               const idx = Math.round(e.nativeEvent.contentOffset.x / width);
               setActiveSlide(idx);
-              if (slideTimer.current) clearInterval(slideTimer.current);
-              slideTimer.current = setInterval(() => {
-                setActiveSlide(prev => {
-                  const next = (prev + 1) % CAR_SLIDES.length;
-                  flatRef.current?.scrollToIndex({ index: next, animated: true });
-                  return next;
-                });
-              }, 3500);
+              restartTimer();
             }}
             renderItem={({ item }) => (
               <View style={styles.slide}>
-                <Image
-                  source={{ uri: item.uri }}
-                  style={styles.carImage}
-                  resizeMode="cover"
-                />
-                {/* Dark gradient overlay */}
-                <View style={styles.slideOverlay} />
-                {/* Top fade */}
-                <View style={styles.slideTopFade} />
-                {/* Bottom fade */}
-                <View style={styles.slideBottomFade} />
+                <Image source={{ uri: item.uri }} style={styles.carImg} resizeMode="cover" />
+                <View style={styles.overlayFull} />
+                <View style={styles.overlayTop} />
+                <View style={styles.overlayBottom} />
               </View>
             )}
           />
 
-          {/* Gold top border */}
-          <View style={styles.goldTopBorder} />
+          {/* Gold top stripe */}
+          <View style={styles.goldStripe} />
 
-          {/* Navbar overlay */}
-          <View style={styles.navOverlay}>
+          {/* ── Navbar ── */}
+          <View style={styles.nav}>
             <View>
-              <Text style={styles.greeting}>Good morning</Text>
-              <Text style={styles.brandName}>Elite Chauffeurs</Text>
+              <Text style={styles.navGreeting}>Good morning</Text>
+              <Text style={styles.navBrand}>Elite Chauffeurs</Text>
             </View>
-            <TouchableOpacity style={styles.avatarBtn} onPress={() => navigation.navigate("Profile")}>
-              <Text style={styles.avatarText}>J</Text>
-              <View style={[styles.onlineDot, { borderColor: colors.black }]} />
+            <TouchableOpacity
+              style={styles.avatar}
+              onPress={() => navigation.navigate("Profile")}
+            >
+              <Text style={styles.avatarLetter}>J</Text>
+              <View style={styles.onlineBadge} />
             </TouchableOpacity>
           </View>
 
-          {/* Slide info overlay */}
-          <View style={styles.slideInfoOverlay}>
-            {/* Badge */}
-            <View style={styles.heroBadge}>
-              <View style={styles.heroBadgeDot} />
-              <Text style={styles.heroBadgeText}>PREMIUM FLEET · AUSTRALIA</Text>
+          {/* ── Slide info ── */}
+          <View style={styles.slideInfo}>
+            <View style={styles.categoryPill}>
+              <View style={styles.pillDot} />
+              <Text style={styles.categoryText}>{CAR_SLIDES[activeSlide].category} · AUSTRALIA</Text>
             </View>
-
-            {/* Car info */}
             <Text style={styles.carLabel}>{CAR_SLIDES[activeSlide].label}</Text>
             <Text style={styles.carModel}>{CAR_SLIDES[activeSlide].model}</Text>
-
-            <View style={styles.carPriceRow}>
-              <View style={styles.carPriceBadge}>
-                <Text style={styles.carPriceText}>{CAR_SLIDES[activeSlide].price}</Text>
+            <View style={styles.carActions}>
+              <View style={styles.pricePill}>
+                <Text style={styles.priceText}>{CAR_SLIDES[activeSlide].price}</Text>
               </View>
               <TouchableOpacity
-                style={styles.carBookBtn}
+                style={styles.bookHeroBtn}
                 onPress={() => navigation.navigate("Book")}
+                activeOpacity={0.85}
               >
-                <Text style={styles.carBookBtnText}>Book This →</Text>
+                <Text style={styles.bookHeroBtnText}>Book This  →</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Dot indicators */}
-            <View style={styles.dotsRow}>
+            {/* Dots */}
+            <View style={styles.dots}>
               {CAR_SLIDES.map((_, i) => (
-                <TouchableOpacity
-                  key={i}
-                  onPress={() => {
-                    setActiveSlide(i);
-                    flatRef.current?.scrollToIndex({ index: i, animated: true });
-                  }}
-                >
+                <TouchableOpacity key={i} onPress={() => {
+                  setActiveSlide(i);
+                  flatRef.current?.scrollToIndex({ index: i, animated: true });
+                  restartTimer();
+                }}>
                   <View style={[styles.dot, i === activeSlide && styles.dotActive]} />
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          {/* Stats strip */}
-          <View style={styles.statsStrip}>
-            {[["15K+","Rides"],["4.9★","Rating"],["6","Cities"],["24/7","Support"]].map(([v,l]) => (
-              <View key={l} style={styles.statItem}>
-                <Text style={styles.statValue}>{v}</Text>
-                <Text style={styles.statLabel}>{l}</Text>
+          {/* ── Stats bar ── */}
+          <View style={styles.statsBar}>
+            {[["15K+","Rides"],["4.9★","Rating"],["6","Cities"],["24/7","Support"]].map(([v, l]) => (
+              <View key={l} style={styles.statCol}>
+                <Text style={styles.statVal}>{v}</Text>
+                <Text style={styles.statLbl}>{l}</Text>
               </View>
             ))}
           </View>
         </View>
 
-        {/* ── BOOKING CARD ───────────────────────────────────── */}
-        <View style={[styles.bookingCard, { backgroundColor: colors.darkSurface }]}>
-          <View style={styles.cardTopGlow} />
+        {/* ════════════════════════════════════════════
+            BOOKING CARD
+        ════════════════════════════════════════════ */}
+        <View style={styles.bookCard}>
+          {/* Gold glow line */}
+          <View style={styles.cardGlow} />
+
+          {/* Section header */}
+          <Text style={styles.cardTitle}>Book a Ride</Text>
+          <Text style={styles.cardSub}>Enter your route to get an instant price</Text>
 
           {/* Service tabs */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-            {SERVICES.map(s => (
-              <TouchableOpacity
-                key={s.type}
-                onPress={() => setService(s.type)}
-                style={[
-                  styles.serviceTab,
-                  { backgroundColor: colors.darkMuted },
-                  service === s.type && { backgroundColor: s.color, borderColor: `${colors.gold}50` },
-                ]}
-              >
-                <View style={[styles.serviceIconBox, service === s.type && { borderColor: `${colors.gold}60` }]}>
-                  <Text style={[styles.serviceAbbr, { color: colors.gray400 }, service === s.type && { color: colors.gold }]}>{s.abbr}</Text>
-                </View>
-                <Text style={[styles.serviceLabel, { color: colors.gray500 }, service === s.type && { color: colors.goldLight }]}>
-                  {s.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll}>
+            {SERVICES.map(s => {
+              const active = service === s.type;
+              return (
+                <TouchableOpacity
+                  key={s.type}
+                  onPress={() => setService(s.type)}
+                  style={[styles.tab, active && styles.tabActive]}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.tabIcon, active && { opacity: 1 }]}>{s.icon}</Text>
+                  <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{s.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
 
-          {/* Route inputs */}
-          <View style={[styles.routeBox, { backgroundColor: colors.darkMuted, borderColor: colors.darkBorder }]}>
+          {/* Route input box */}
+          <View style={styles.routeBox}>
             <View style={styles.inputRow}>
-              <View style={[styles.routeDot, { backgroundColor: colors.green }]} />
+              <View style={[styles.dot2, { backgroundColor: GREEN }]} />
               <TextInput
-                style={[styles.routeInput, { color: colors.white }]}
+                style={styles.routeInput}
                 placeholder="Pickup location"
-                placeholderTextColor={colors.gray500}
+                placeholderTextColor="#4A4A55"
                 value={pickup}
                 onChangeText={setPickup}
+                selectionColor={GOLD}
               />
             </View>
-            <View style={styles.routeDividerRow}>
-              <View style={[styles.routeDividerLine, { borderColor: colors.darkBorder }]} />
-              <TouchableOpacity style={[styles.swapBtn, { backgroundColor: colors.darkSurface, borderColor: `${colors.gold}40` }]}>
-                <Text style={{ color: colors.gold, fontSize: 16 }}>⇅</Text>
+            <View style={styles.divRow}>
+              <View style={styles.divLine} />
+              <TouchableOpacity style={styles.swapBtn}>
+                <Text style={{ color: GOLD, fontSize: 18 }}>⇅</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.inputRow}>
-              <View style={[styles.routeDot, { backgroundColor: colors.gold }]} />
+              <View style={[styles.dot2, { backgroundColor: GOLD }]} />
               <TextInput
-                style={[styles.routeInput, { color: colors.white }]}
+                style={styles.routeInput}
                 placeholder="Drop-off location"
-                placeholderTextColor={colors.gray500}
+                placeholderTextColor="#4A4A55"
                 value={dropoff}
                 onChangeText={setDropoff}
+                selectionColor={GOLD}
               />
             </View>
           </View>
 
-          {/* Book button */}
+          {/* CTA */}
           <TouchableOpacity
-            style={styles.bookBtn}
+            style={styles.searchBtn}
             activeOpacity={0.85}
             onPress={() => navigation.navigate("Book", { pickup, dropoff, service })}
           >
-            <Text style={[styles.bookBtnText, { color: colors.black }]}>Search & Get Instant Quote</Text>
-            <View style={styles.bookBtnArrow}>
-              <Text style={{ color: colors.black, fontSize: 16, fontWeight: "800" }}>→</Text>
+            <Text style={styles.searchBtnText}>Search & Get Instant Quote</Text>
+            <View style={styles.searchArrow}>
+              <Text style={{ color: BLACK, fontSize: 16, fontWeight: "900" }}>→</Text>
             </View>
           </TouchableOpacity>
-          <Text style={[styles.bookNote, { color: colors.gray500 }]}>✓ Fixed price · ✓ No surge · ✓ Free cancellation</Text>
+
+          <Text style={styles.guarantee}>✓ Fixed price  ·  ✓ No surge  ·  ✓ Free cancellation</Text>
         </View>
 
-        {/* ── UPCOMING RIDE ──────────────────────────────────── */}
+        {/* ════════════════════════════════════════════
+            UPCOMING RIDE (demo)
+        ════════════════════════════════════════════ */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.white }]}>Upcoming Ride</Text>
-          <TouchableOpacity style={[styles.upcomingCard, { backgroundColor: colors.darkSurface, borderColor: `${colors.gold}25` }]} activeOpacity={0.9}>
-            <View style={styles.upcomingHeader}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Upcoming Ride</Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Bookings")}>
+              <Text style={styles.seeAll}>See all →</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.upcomingCard}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate("Bookings")}
+          >
+            <View style={styles.upcomingTop}>
               <View style={styles.confirmedBadge}>
                 <View style={styles.confirmedDot} />
                 <Text style={styles.confirmedText}>Confirmed</Text>
               </View>
-              <Text style={[styles.upcomingAmount, { color: colors.gold }]}>{UPCOMING.amount}</Text>
+              <Text style={styles.upcomingAmt}>$142</Text>
             </View>
-            <Text style={[styles.upcomingRoute, { color: colors.white }]}>{UPCOMING.route}</Text>
-            <Text style={[styles.upcomingMeta, { color: colors.gray500 }]}>{UPCOMING.date} · Driver: {UPCOMING.driver}</Text>
-            <View style={[styles.progressBar, { backgroundColor: colors.darkBorder }]}>
-              <View style={[styles.progressFill, { backgroundColor: colors.gold }]} />
+            <Text style={styles.upcomingRoute}>Sydney Airport → CBD</Text>
+            <Text style={styles.upcomingMeta}>Today · 06:30 AM  ·  Driver: Marcus T.</Text>
+            <View style={styles.progBar}>
+              <View style={styles.progFill} />
             </View>
-            <View style={styles.upcomingFooter}>
-              <Text style={[styles.upcomingFooterSub, { color: colors.gray500 }]}>Driver en route · ~12 min</Text>
-              <Text style={[styles.trackBtn, { color: colors.gold }]} onPress={() => navigation.navigate("RideTracking", { booking: UPCOMING })}>Track Live →</Text>
+            <View style={styles.upcomingBottom}>
+              <Text style={styles.upcomingEta}>Driver en route  ·  ~12 min</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("RideTracking")}>
+                <Text style={styles.trackLink}>Track Live →</Text>
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* ── QUICK BOOK ─────────────────────────────────────── */}
+        {/* ════════════════════════════════════════════
+            QUICK BOOK GRID
+        ════════════════════════════════════════════ */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.white }]}>Quick Book</Text>
+          <Text style={styles.sectionTitle}>Quick Book</Text>
           <View style={styles.quickGrid}>
             {[
-              { abbr:"AIR", label:"Airport",  sub:"All terminals",       type:"airport_transfer" },
-              { abbr:"BIZ", label:"Corporate",sub:"Executive & discreet", type:"corporate"       },
-              { abbr:"WED", label:"Wedding",  sub:"Special packages",     type:"wedding"         },
-              { abbr:"HRS", label:"Hourly",   sub:"From 3 hours",         type:"hourly"          },
+              { icon:"✈", label:"Airport",  sub:"All terminals",        type:"airport_transfer" },
+              { icon:"💼", label:"Corporate",sub:"Executive & discreet", type:"corporate"        },
+              { icon:"💍", label:"Wedding",  sub:"Special packages",     type:"wedding"          },
+              { icon:"⏱", label:"Hourly",   sub:"From 3 hours",         type:"hourly"           },
             ].map(s => (
-              <TouchableOpacity key={s.label} style={[styles.quickCard, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}
-                onPress={() => navigation.navigate("Book", { service: s.type })} activeOpacity={0.85}>
-                <View style={styles.quickIconBox}>
-                  <Text style={[styles.quickAbbr, { color: colors.gold }]}>{s.abbr}</Text>
-                </View>
-                <Text style={[styles.quickLabel, { color: colors.white }]}>{s.label}</Text>
-                <Text style={[styles.quickSub, { color: colors.gray500 }]}>{s.sub}</Text>
+              <TouchableOpacity
+                key={s.label}
+                style={styles.quickCard}
+                onPress={() => navigation.navigate("Book", { service: s.type })}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.quickIcon}>{s.icon}</Text>
+                <Text style={styles.quickLabel}>{s.label}</Text>
+                <Text style={styles.quickSub}>{s.sub}</Text>
+                <Text style={styles.quickArrow}>→</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* ── PROMO BANNER ───────────────────────────────────── */}
-        <View style={[styles.section, { marginBottom: 32 }]}>
-          <View style={[styles.promoBanner, { backgroundColor: colors.gold }]}>
+        {/* ════════════════════════════════════════════
+            PROMO BANNER
+        ════════════════════════════════════════════ */}
+        <View style={[styles.section, { marginBottom: 8 }]}>
+          <TouchableOpacity
+            style={styles.promoBanner}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate("Book")}
+          >
             <View style={styles.promoCircle1} />
             <View style={styles.promoCircle2} />
             <View style={{ flex: 1 }}>
               <Text style={styles.promoTag}>LIMITED OFFER</Text>
-              <Text style={[styles.promoTitle, { color: colors.black }]}>First ride 15% off</Text>
-              <Text style={styles.promoSub}>Use code ELITE15 at checkout</Text>
+              <Text style={styles.promoTitle}>First ride 15% off</Text>
+              <Text style={styles.promoCode}>Use code ELITE15 at checkout</Text>
             </View>
-            <TouchableOpacity style={[styles.promoBtn, { backgroundColor: colors.black }]} onPress={() => navigation.navigate("Book")}>
-              <Text style={[styles.promoBtnText, { color: colors.gold }]}>Book Now</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.promoBtn}>
+              <Text style={styles.promoBtnText}>Book{"\n"}Now</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
       </ScrollView>
@@ -334,149 +369,136 @@ export default function HomeScreen({ navigation }: any) {
 const HERO_H = height * 0.58;
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  root: { flex: 1, backgroundColor: BLACK },
 
-  // ── HERO ──────────────────────────────────────────────────────
-  hero: { height: HERO_H, position: "relative" },
+  // ── HERO ─────────────────────────────────────────────────────────
+  hero: { height: HERO_H, position: "relative", backgroundColor: BLACK },
   slide: { width, height: HERO_H },
-  carImage: { width: "100%", height: "100%" },
+  carImg: { width: "100%", height: "100%" },
+  overlayFull: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(6,5,3,0.48)" },
+  overlayTop: { position: "absolute", top: 0, left: 0, right: 0, height: 140, backgroundColor: "rgba(6,5,3,0.65)" },
+  overlayBottom: { position: "absolute", bottom: 0, left: 0, right: 0, height: 220, backgroundColor: "rgba(6,5,3,0.88)" },
+  goldStripe: { position: "absolute", top: 0, left: 0, right: 0, height: 2.5, backgroundColor: GOLD, opacity: 0.85, zIndex: 10 },
 
-  slideOverlay: { ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(5,4,2,0.55)" },
-  slideTopFade: { position:"absolute", top:0, left:0, right:0, height:120,
-    backgroundColor:"rgba(5,4,2,0.6)" },
-  slideBottomFade: { position:"absolute", bottom:0, left:0, right:0, height:200,
-    backgroundColor:"rgba(5,4,2,0.85)" },
+  nav: { position: "absolute", top: Platform.OS === "android" ? 44 : 16, left: 20, right: 20,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center", zIndex: 20 },
+  navGreeting: { color: "rgba(201,168,76,0.75)", fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
+  navBrand: { color: WHITE, fontSize: 22, fontWeight: "900", letterSpacing: 0.2, marginTop: 1 },
+  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: "rgba(201,168,76,0.12)",
+    borderWidth: 2, borderColor: GOLD, justifyContent: "center", alignItems: "center" },
+  avatarLetter: { color: GOLD, fontWeight: "900", fontSize: 18 },
+  onlineBadge: { position: "absolute", bottom: 2, right: 2, width: 11, height: 11,
+    borderRadius: 6, backgroundColor: GREEN, borderWidth: 2, borderColor: BLACK },
 
-  goldTopBorder: { position:"absolute", top:0, left:0, right:0, height:2,
-    backgroundColor:"rgba(201,168,76,0.8)", zIndex:10 },
+  slideInfo: { position: "absolute", bottom: 60, left: 20, right: 20, zIndex: 20 },
+  categoryPill: { flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "rgba(201,168,76,0.1)", borderWidth: 1, borderColor: GOLD_BRD,
+    borderRadius: 20, paddingHorizontal: 11, paddingVertical: 5, alignSelf: "flex-start", marginBottom: 10 },
+  pillDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: GOLD },
+  categoryText: { color: GOLD, fontSize: 9, fontWeight: "900", letterSpacing: 1.4 },
+  carLabel: { color: WHITE, fontSize: 30, fontWeight: "900", letterSpacing: -0.3, marginBottom: 2 },
+  carModel: { color: "rgba(201,168,76,0.65)", fontSize: 13, fontWeight: "600", marginBottom: 16 },
+  carActions: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 },
+  pricePill: { backgroundColor: "rgba(201,168,76,0.12)", borderWidth: 1, borderColor: GOLD_BRD,
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 },
+  priceText: { color: GOLD, fontWeight: "900", fontSize: 16 },
+  bookHeroBtn: { backgroundColor: GOLD, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 9 },
+  bookHeroBtnText: { color: BLACK, fontWeight: "900", fontSize: 13 },
 
-  navOverlay: { position:"absolute", top: Platform.OS === "android" ? 40 : 16,
-    left:20, right:20, flexDirection:"row",
-    justifyContent:"space-between", alignItems:"flex-start", zIndex:20 },
-  greeting: { color:"rgba(201,168,76,0.8)", fontSize:12, fontWeight:"600", letterSpacing:0.5 },
-  brandName: { color:"#FFFFFF", fontSize:22, fontWeight:"800", letterSpacing:0.3 },
-  avatarBtn: { width:44, height:44, borderRadius:22,
-    backgroundColor:"rgba(201,168,76,0.15)", borderWidth:2,
-    borderColor:"#C9A84C", justifyContent:"center", alignItems:"center" },
-  avatarText: { color:"#C9A84C", fontWeight:"800", fontSize:17 },
-  onlineDot: { position:"absolute", bottom:1, right:1, width:10, height:10,
-    borderRadius:5, backgroundColor:"#4ADE80", borderWidth:2 },
+  dots: { flexDirection: "row", gap: 6 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.25)" },
+  dotActive: { width: 24, backgroundColor: GOLD, borderRadius: 3 },
 
-  slideInfoOverlay: { position:"absolute", bottom:56, left:20, right:20, zIndex:20 },
-  heroBadge: { flexDirection:"row", alignItems:"center", gap:7,
-    backgroundColor:"rgba(201,168,76,0.12)", borderWidth:1,
-    borderColor:"rgba(201,168,76,0.3)", borderRadius:20,
-    paddingHorizontal:12, paddingVertical:5, alignSelf:"flex-start", marginBottom:10 },
-  heroBadgeDot: { width:5, height:5, borderRadius:3, backgroundColor:"#C9A84C" },
-  heroBadgeText: { color:"#C9A84C", fontSize:9, fontWeight:"800", letterSpacing:1.2 },
+  statsBar: { position: "absolute", bottom: 0, left: 0, right: 0,
+    flexDirection: "row", backgroundColor: "rgba(8,8,8,0.9)",
+    borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.12)", paddingVertical: 10, zIndex: 20 },
+  statCol: { flex: 1, alignItems: "center" },
+  statVal: { color: GOLD, fontSize: 15, fontWeight: "900" },
+  statLbl: { color: GRAY, fontSize: 9, fontWeight: "600", marginTop: 1, letterSpacing: 0.3 },
 
-  carLabel: { color:"#FFFFFF", fontSize:28, fontWeight:"800", marginBottom:2 },
-  carModel: { color:"rgba(201,168,76,0.7)", fontSize:13, fontWeight:"600", marginBottom:14 },
-  carPriceRow: { flexDirection:"row", alignItems:"center", gap:10, marginBottom:14 },
-  carPriceBadge: { backgroundColor:"rgba(201,168,76,0.15)", borderWidth:1,
-    borderColor:"rgba(201,168,76,0.5)", borderRadius:12, paddingHorizontal:12, paddingVertical:6 },
-  carPriceText: { color:"#C9A84C", fontWeight:"800", fontSize:16 },
-  carBookBtn: { backgroundColor:"#C9A84C", borderRadius:12, paddingHorizontal:16, paddingVertical:8 },
-  carBookBtnText: { color:"#0A0A0A", fontWeight:"800", fontSize:13 },
+  // ── BOOKING CARD ─────────────────────────────────────────────────
+  bookCard: { marginHorizontal: 14, marginTop: -22, borderRadius: 24,
+    backgroundColor: CARD, borderWidth: 1, borderColor: "rgba(201,168,76,0.18)",
+    padding: 20, elevation: 18,
+    shadowColor: "#C9A84C", shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18, shadowRadius: 24 },
+  cardGlow: { position: "absolute", top: 0, left: 24, right: 24, height: 1.5,
+    backgroundColor: "rgba(201,168,76,0.55)", borderRadius: 999 },
+  cardTitle: { color: WHITE, fontSize: 17, fontWeight: "800", marginBottom: 2 },
+  cardSub: { color: GRAY, fontSize: 12, marginBottom: 16 },
 
-  dotsRow: { flexDirection:"row", gap:6 },
-  dot: { width:6, height:6, borderRadius:3, backgroundColor:"rgba(255,255,255,0.3)" },
-  dotActive: { width:22, backgroundColor:"#C9A84C" },
+  tabScroll: { marginBottom: 16 },
+  tab: { alignItems: "center", paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: 14, marginRight: 8, backgroundColor: MUTED,
+    borderWidth: 1, borderColor: "transparent", minWidth: 68 },
+  tabActive: { backgroundColor: "rgba(201,168,76,0.1)", borderColor: "rgba(201,168,76,0.35)" },
+  tabIcon: { fontSize: 18, marginBottom: 4, opacity: 0.6 },
+  tabLabel: { color: GRAY, fontSize: 10, fontWeight: "700" },
+  tabLabelActive: { color: GOLD },
 
-  statsStrip: { position:"absolute", bottom:0, left:0, right:0,
-    flexDirection:"row", backgroundColor:"rgba(10,10,10,0.85)",
-    borderTopWidth:1, borderTopColor:"rgba(201,168,76,0.15)",
-    paddingVertical:10, zIndex:20 },
-  statItem: { flex:1, alignItems:"center" },
-  statValue: { color:"#C9A84C", fontSize:15, fontWeight:"800" },
-  statLabel: { color:"#6B7280", fontSize:9, marginTop:1 },
+  routeBox: { backgroundColor: MUTED, borderRadius: 16, borderWidth: 1,
+    borderColor: BORDER, paddingHorizontal: 14, paddingVertical: 2, marginBottom: 14 },
+  inputRow: { flexDirection: "row", alignItems: "center", paddingVertical: 14 },
+  dot2: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
+  routeInput: { flex: 1, color: WHITE, fontSize: 14, fontWeight: "500" },
+  divRow: { flexDirection: "row", alignItems: "center", marginVertical: -4, paddingLeft: 4 },
+  divLine: { flex: 1, height: 1, borderWidth: 1, borderStyle: "dashed", borderColor: BORDER },
+  swapBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: CARD,
+    borderWidth: 1, borderColor: "rgba(201,168,76,0.3)", justifyContent: "center",
+    alignItems: "center", marginLeft: 10 },
 
-  // ── BOOKING CARD ──────────────────────────────────────────────
-  bookingCard: { marginHorizontal:16,
-    borderRadius:24, marginTop:-20, padding:18,
-    borderWidth:1, borderColor:"rgba(201,168,76,0.2)",
-    shadowColor:"#C9A84C", shadowOffset:{width:0,height:8},
-    shadowOpacity:0.2, shadowRadius:20, elevation:14 },
-  cardTopGlow: { position:"absolute", top:0, left:0, right:0, height:1.5,
-    backgroundColor:"rgba(201,168,76,0.5)", borderRadius:24 },
+  searchBtn: { backgroundColor: GOLD, borderRadius: 16, flexDirection: "row",
+    alignItems: "center", justifyContent: "space-between", paddingVertical: 17,
+    paddingHorizontal: 20, marginBottom: 12 },
+  searchBtnText: { color: BLACK, fontWeight: "900", fontSize: 14 },
+  searchArrow: { width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(0,0,0,0.18)",
+    justifyContent: "center", alignItems: "center" },
 
-  serviceTab: { alignItems:"center", paddingHorizontal:14, paddingVertical:8,
-    borderRadius:14, marginRight:8,
-    borderWidth:1, borderColor:"transparent", minWidth:68 },
-  serviceIconBox: { width:32, height:22, borderRadius:6, backgroundColor:"rgba(201,168,76,0.1)",
-    borderWidth:1, borderColor:"rgba(201,168,76,0.2)", justifyContent:"center",
-    alignItems:"center", marginBottom:4 },
-  serviceAbbr: { fontSize:8, fontWeight:"800", letterSpacing:0.5 },
-  serviceLabel: { fontSize:10, fontWeight:"600" },
+  guarantee: { color: "#4A4A55", textAlign: "center", fontSize: 11, fontWeight: "600" },
 
-  routeBox: { borderRadius:16,
-    paddingHorizontal:14, paddingVertical:4,
-    marginBottom:14, borderWidth:1 },
-  inputRow: { flexDirection:"row", alignItems:"center", paddingVertical:13 },
-  routeDot: { width:10, height:10, borderRadius:5, marginRight:12 },
-  routeInput: { flex:1, fontSize:14 },
-  routeDividerRow: { flexDirection:"row", alignItems:"center", marginVertical:-4, paddingLeft:5 },
-  routeDividerLine: { flex:1, height:1, borderWidth:1, borderStyle:"dashed" },
-  swapBtn: { width:32, height:32, borderRadius:16,
-    borderWidth:1, justifyContent:"center",
-    alignItems:"center", marginLeft:10 },
+  // ── SECTION ──────────────────────────────────────────────────────
+  section: { paddingHorizontal: 16, marginTop: 26 },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
+  sectionTitle: { color: WHITE, fontSize: 18, fontWeight: "900" },
+  seeAll: { color: GOLD, fontSize: 12, fontWeight: "700" },
 
-  bookBtn: { backgroundColor:"#C9A84C", borderRadius:16,
-    flexDirection:"row", alignItems:"center",
-    justifyContent:"space-between", paddingVertical:16,
-    paddingHorizontal:20, marginBottom:10 },
-  bookBtnText: { fontWeight:"800", fontSize:15 },
-  bookBtnArrow: { width:30, height:30, borderRadius:15,
-    backgroundColor:"rgba(0,0,0,0.15)", justifyContent:"center", alignItems:"center" },
-  bookNote: { textAlign:"center", fontSize:11 },
+  // ── UPCOMING ─────────────────────────────────────────────────────
+  upcomingCard: { backgroundColor: CARD, borderRadius: 20, padding: 18,
+    borderWidth: 1, borderColor: "rgba(201,168,76,0.2)" },
+  upcomingTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  confirmedBadge: { flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "rgba(74,222,128,0.08)", borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: "rgba(74,222,128,0.25)" },
+  confirmedDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN },
+  confirmedText: { color: GREEN, fontSize: 11, fontWeight: "700" },
+  upcomingAmt: { color: GOLD, fontSize: 22, fontWeight: "900" },
+  upcomingRoute: { color: WHITE, fontWeight: "800", fontSize: 16, marginBottom: 4 },
+  upcomingMeta: { color: GRAY, fontSize: 12, marginBottom: 14 },
+  progBar: { height: 3, borderRadius: 2, backgroundColor: BORDER, marginBottom: 12, overflow: "hidden" },
+  progFill: { width: "40%", height: "100%", backgroundColor: GOLD, borderRadius: 2 },
+  upcomingBottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  upcomingEta: { color: GRAY, fontSize: 12 },
+  trackLink: { color: GOLD, fontSize: 13, fontWeight: "700" },
 
-  // ── SECTION ───────────────────────────────────────────────────
-  section: { paddingHorizontal:20, marginTop:24 },
-  sectionTitle: { fontSize:18, fontWeight:"800", marginBottom:14 },
+  // ── QUICK GRID ───────────────────────────────────────────────────
+  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  quickCard: { backgroundColor: CARD, borderRadius: 18, padding: 16, borderWidth: 1,
+    borderColor: BORDER, width: (width - 42) / 2 },
+  quickIcon: { fontSize: 26, marginBottom: 10 },
+  quickLabel: { color: WHITE, fontWeight: "800", fontSize: 14, marginBottom: 3 },
+  quickSub: { color: GRAY, fontSize: 11, marginBottom: 10 },
+  quickArrow: { color: GOLD, fontWeight: "800", fontSize: 14 },
 
-  // ── UPCOMING ──────────────────────────────────────────────────
-  upcomingCard: { borderRadius:20, padding:18, borderWidth:1 },
-  upcomingHeader: { flexDirection:"row", justifyContent:"space-between",
-    alignItems:"center", marginBottom:10 },
-  confirmedBadge: { flexDirection:"row", alignItems:"center", gap:6,
-    backgroundColor:"rgba(74,222,128,0.1)", borderRadius:20,
-    paddingHorizontal:10, paddingVertical:4,
-    borderWidth:1, borderColor:"rgba(74,222,128,0.3)" },
-  confirmedDot: { width:6, height:6, borderRadius:3, backgroundColor:"#4ADE80" },
-  confirmedText: { color:"#4ADE80", fontSize:11, fontWeight:"700" },
-  upcomingAmount: { fontSize:22, fontWeight:"800" },
-  upcomingRoute: { fontWeight:"700", fontSize:16, marginBottom:4 },
-  upcomingMeta: { fontSize:12, marginBottom:14 },
-  progressBar: { height:4, borderRadius:2, marginBottom:10, overflow:"hidden" },
-  progressFill: { width:"40%", height:"100%", borderRadius:2 },
-  upcomingFooter: { flexDirection:"row", justifyContent:"space-between" },
-  upcomingFooterSub: { fontSize:12 },
-  trackBtn: { fontSize:13, fontWeight:"700" },
-
-  // ── QUICK GRID ────────────────────────────────────────────────
-  quickGrid: { flexDirection:"row", flexWrap:"wrap", gap:10 },
-  quickCard: { borderRadius:18, padding:16,
-    width:(width - 50) / 2, borderWidth:1 },
-  quickIconBox: { width:44, height:30, borderRadius:8, backgroundColor:"rgba(201,168,76,0.1)",
-    borderWidth:1, borderColor:"rgba(201,168,76,0.25)", justifyContent:"center",
-    alignItems:"center", marginBottom:10 },
-  quickAbbr: { fontSize:9, fontWeight:"800", letterSpacing:0.8 },
-  quickLabel: { fontWeight:"700", fontSize:13, marginBottom:3 },
-  quickSub: { fontSize:11 },
-
-  // ── PROMO ─────────────────────────────────────────────────────
-  promoBanner: { borderRadius:22, padding:20,
-    flexDirection:"row", alignItems:"center", overflow:"hidden" },
-  promoCircle1: { position:"absolute", right:-20, top:-30, width:110, height:110,
-    borderRadius:55, backgroundColor:"rgba(255,255,255,0.12)" },
-  promoCircle2: { position:"absolute", right:40, bottom:-40, width:80, height:80,
-    borderRadius:40, backgroundColor:"rgba(255,255,255,0.08)" },
-  promoTag: { color:"rgba(0,0,0,0.55)", fontSize:9, fontWeight:"800",
-    letterSpacing:1.5, marginBottom:4 },
-  promoTitle: { fontSize:20, fontWeight:"800", marginBottom:2 },
-  promoSub: { color:"rgba(0,0,0,0.6)", fontSize:11 },
-  promoBtn: { borderRadius:14,
-    paddingHorizontal:16, paddingVertical:10, flexShrink:0 },
-  promoBtnText: { fontWeight:"800", fontSize:13 },
+  // ── PROMO ────────────────────────────────────────────────────────
+  promoBanner: { backgroundColor: GOLD, borderRadius: 22, padding: 22,
+    flexDirection: "row", alignItems: "center", overflow: "hidden" },
+  promoCircle1: { position: "absolute", right: -25, top: -35, width: 120, height: 120,
+    borderRadius: 60, backgroundColor: "rgba(255,255,255,0.1)" },
+  promoCircle2: { position: "absolute", right: 45, bottom: -45, width: 90, height: 90,
+    borderRadius: 45, backgroundColor: "rgba(255,255,255,0.07)" },
+  promoTag: { color: "rgba(0,0,0,0.5)", fontSize: 9, fontWeight: "900", letterSpacing: 1.8, marginBottom: 5 },
+  promoTitle: { color: BLACK, fontSize: 21, fontWeight: "900", marginBottom: 3 },
+  promoCode: { color: "rgba(0,0,0,0.55)", fontSize: 12 },
+  promoBtn: { backgroundColor: BLACK, borderRadius: 14, paddingHorizontal: 18, paddingVertical: 12, flexShrink: 0 },
+  promoBtnText: { color: GOLD, fontWeight: "900", fontSize: 13, textAlign: "center" },
 });
