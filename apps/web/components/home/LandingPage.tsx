@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import AppDownload from "./AppDownload";
 
 /* ═════════════════════════════════════════════════════════════════════════
    HOOKS & HELPERS
@@ -619,6 +620,11 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ════════════════════════════════════════════════════════════════
+          APP DOWNLOAD
+          ════════════════════════════════════════════════════════════════ */}
+      <AppDownload />
 
       {/* ════════════════════════════════════════════════════════════════
           FINAL CTA

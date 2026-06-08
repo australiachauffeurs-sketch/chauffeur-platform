@@ -1,116 +1,258 @@
+"use client";
+import { useState } from "react";
+
+// Latest APK build — update this URL after each new EAS build
+const ANDROID_APK_URL =
+  "https://expo.dev/accounts/australia-chauffeurs/projects/elite-chauffeurs/builds/0279b6b3-1382-445d-9225-bcc2673eece7";
+
+const QR_URL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ANDROID_APK_URL)}&color=C9A84C&bgcolor=09090B&qzone=2&format=png`;
+
 export default function AppDownload() {
+  const [qrVisible, setQrVisible] = useState(false);
+
   return (
-    <section className="py-24 bg-[#0A0A0A] relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C9A84C]/40 to-transparent" />
+    <section className="py-24 relative overflow-hidden"
+      style={{ background: "linear-gradient(135deg,#09090B 0%,#111113 50%,#09090B 100%)" }}>
+
+      {/* Decorative lines */}
+      <div className="absolute top-0 inset-x-0 h-px"
+        style={{ background: "linear-gradient(90deg,transparent,#C9A84C,transparent)" }} />
+      <div className="absolute bottom-0 inset-x-0 h-px"
+        style={{ background: "linear-gradient(90deg,transparent,#C9A84C40,transparent)" }} />
 
       {/* Background circles */}
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-[#C9A84C]/5 translate-x-1/2" />
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[350px] h-[350px] rounded-full border border-[#C9A84C]/8 translate-x-1/2" />
+      <div className="absolute -right-40 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-[#C9A84C]/5 pointer-events-none" />
+      <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-[380px] h-[380px] rounded-full border border-[#C9A84C]/8 pointer-events-none" />
+      <div className="absolute -left-40 bottom-0 w-[400px] h-[400px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle,rgba(201,168,76,0.04),transparent 70%)" }} />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+          {/* ── LEFT: Content ─────────────────────────────────── */}
           <div>
-            <span className="text-[#C9A84C] text-xs font-bold tracking-[0.3em] uppercase">Mobile App</span>
-            <h2 className="text-4xl font-bold text-white mt-3 mb-5" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Book on the Go with<br />
-              <span className="text-[#C9A84C]">Our Free App</span>
+            <span className="text-[#C9A84C] text-[11px] font-bold tracking-[0.3em] uppercase">Mobile App</span>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mt-3 mb-5 leading-tight"
+              style={{ fontFamily: "'Playfair Display', serif" }}>
+              Book your ride in{" "}
+              <span style={{
+                background: "linear-gradient(135deg,#C9A84C,#E8C97A,#A07830)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}>
+                60 seconds
+              </span>
             </h2>
-            <p className="text-gray-400 text-base leading-relaxed mb-8">
-              Download the Elite Chauffeurs app and book your ride in under 60 seconds. Track your driver live, manage bookings, and get instant confirmations — all from your phone.
+            <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-lg">
+              Download the Elite Chauffeurs app for Android and get instant quotes,
+              live driver tracking, and one-tap rebooking — right from your pocket.
             </p>
 
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              {[["Live Tracking","Watch your driver on the map in real-time"],["Instant Alerts","SMS & push notifications at every step"],["Booking History","All your receipts in one place"],["Rate & Review","Share feedback after every trip"]].map(([title,desc]) => (
-                <div key={title} className="flex items-start gap-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] mt-1.5 flex-shrink-0" />
+            {/* Feature list */}
+            <div className="grid grid-cols-2 gap-4 mb-10">
+              {[
+                { icon: "📍", title: "Live Tracking",    desc: "Watch your driver on the map" },
+                { icon: "🔔", title: "Instant Alerts",   desc: "SMS & push at every step"     },
+                { icon: "📋", title: "Booking History",  desc: "All receipts in one place"    },
+                { icon: "⭐", title: "Rate & Reward",    desc: "Loyalty points on every trip" },
+              ].map(f => (
+                <div key={f.title} className="flex items-start gap-3">
+                  <span className="text-xl">{f.icon}</span>
                   <div>
-                    <p className="text-white text-sm font-semibold">{title}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">{desc}</p>
+                    <p className="text-white text-sm font-semibold">{f.title}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{f.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Download buttons */}
+            {/* ── Download buttons ── */}
             <div className="flex flex-wrap gap-4">
-              <a href="#" className="flex items-center gap-3 bg-white text-black px-5 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm">
+
+              {/* Android — real link */}
+              <a
+                href={ANDROID_APK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 px-6 py-4 rounded-2xl transition-all duration-300 hover:scale-[1.03]"
+                style={{
+                  background: "linear-gradient(135deg,#C9A84C,#E8C97A,#A07830)",
+                  boxShadow: "0 8px 32px rgba(201,168,76,0.35)",
+                }}
+              >
+                <span className="text-2xl">🤖</span>
                 <div className="text-left">
-                  <div className="text-[10px] text-gray-500">Download on the</div>
-                  <div className="font-bold">App Store</div>
+                  <div className="text-[9px] text-black/60 font-bold uppercase tracking-wider">Download APK</div>
+                  <div className="text-black font-bold text-base leading-tight">Android App</div>
                 </div>
               </a>
-              <a href="#" className="flex items-center gap-3 bg-white text-black px-5 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm">
+
+              {/* iOS — coming soon */}
+              <div
+                className="flex items-center gap-3 px-6 py-4 rounded-2xl cursor-not-allowed opacity-60"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1.5px solid rgba(255,255,255,0.12)",
+                }}
+              >
+                <span className="text-2xl">🍎</span>
                 <div className="text-left">
-                  <div className="text-[10px] text-gray-500">Get it on</div>
-                  <div className="font-bold">Google Play</div>
+                  <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Coming Soon</div>
+                  <div className="text-white font-bold text-base leading-tight">App Store</div>
                 </div>
-              </a>
+              </div>
             </div>
+
+            {/* QR code toggle */}
+            <button
+              onClick={() => setQrVisible(v => !v)}
+              className="mt-6 flex items-center gap-2 text-[#C9A84C] text-sm font-semibold hover:underline transition-all"
+            >
+              <span>📱</span>
+              {qrVisible ? "Hide QR code" : "Scan QR code to download on Android"}
+            </button>
+
+            {qrVisible && (
+              <div className="mt-4 inline-flex flex-col items-center gap-3 p-4 rounded-2xl border border-[#C9A84C]/20"
+                style={{ background: "rgba(201,168,76,0.06)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={QR_URL}
+                  alt="QR code to download Elite Chauffeurs app"
+                  width={160}
+                  height={160}
+                  className="rounded-xl"
+                />
+                <p className="text-gray-500 text-xs text-center">
+                  Point your phone camera at this code
+                </p>
+              </div>
+            )}
+
+            {/* Small disclaimer */}
+            <p className="mt-6 text-gray-600 text-xs">
+              Android APK · Direct install · No Play Store account required<br />
+              <span className="text-[#C9A84C]">✓</span> Safe to install · Enable "Unknown sources" when prompted
+            </p>
           </div>
 
-          {/* Right — phone mockup */}
+          {/* ── RIGHT: Phone mockup ────────────────────────────── */}
           <div className="flex justify-center">
             <div className="relative">
+
+              {/* Floating badge — top */}
+              <div className="absolute -top-5 -left-6 z-20 flex items-center gap-2 bg-[#111113] border border-[#C9A84C]/30 rounded-2xl px-4 py-2.5 shadow-xl"
+                style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-white text-xs font-semibold">Driver en route · 4 min</span>
+              </div>
+
+              {/* Floating badge — bottom */}
+              <div className="absolute -bottom-4 -right-6 z-20 bg-[#C9A84C] rounded-2xl px-4 py-2.5 shadow-xl">
+                <p className="text-black text-xs font-black">⭐ 4.9 · 2,400+ reviews</p>
+              </div>
+
               {/* Phone frame */}
-              <div className="w-64 h-[520px] bg-[#111] rounded-[40px] border-4 border-[#2A2A2A] shadow-2xl overflow-hidden relative">
+              <div className="w-[240px] h-[490px] rounded-[44px] shadow-2xl overflow-hidden relative"
+                style={{
+                  background: "#09090B",
+                  border: "2.5px solid #2A2A30",
+                  boxShadow: "0 40px 80px rgba(0,0,0,0.7), 0 0 60px rgba(201,168,76,0.1)",
+                }}>
+
                 {/* Status bar */}
-                <div className="h-8 bg-[#0A0A0A] flex items-center justify-between px-5 pt-1">
+                <div className="h-8 flex items-center justify-between px-5 pt-1"
+                  style={{ background: "#09090B" }}>
                   <span className="text-white text-[10px] font-bold">9:41</span>
-                  <div className="w-20 h-4 bg-[#0A0A0A] rounded-full border border-[#2A2A2A]" />
-                  <span className="text-white text-[10px]">●●●</span>
+                  <div className="w-20 h-4 rounded-full" style={{ background: "#09090B", border: "1px solid #2A2A30" }} />
+                  <div className="flex items-center gap-1">
+                    <span className="text-white text-[9px]">●●●</span>
+                  </div>
                 </div>
+
+                {/* Gold top stripe */}
+                <div className="h-0.5" style={{ background: "linear-gradient(90deg,transparent,#C9A84C,transparent)" }} />
+
                 {/* App content */}
-                <div className="p-4 space-y-3">
+                <div className="px-4 pt-3 space-y-3">
+                  {/* Header */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-400 text-[10px]">Good morning</p>
-                      <p className="text-white font-bold text-sm">James</p>
+                      <p className="text-[10px] font-semibold" style={{ color: "rgba(201,168,76,0.7)" }}>Good morning</p>
+                      <p className="text-white font-bold text-sm">Elite Chauffeurs</p>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-[#C9A84C]/20 border border-[#C9A84C] flex items-center justify-center text-[#C9A84C] font-bold text-sm">J</div>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
+                      style={{ background: "rgba(201,168,76,0.12)", border: "1.5px solid #C9A84C", color: "#C9A84C" }}>J</div>
                   </div>
-                  {/* Booking card */}
-                  <div className="bg-[#C9A84C] rounded-2xl p-4">
-                    <p className="text-black text-[10px] font-bold mb-1">NEXT RIDE</p>
-                    <p className="text-black font-bold text-sm">Sydney Airport → CBD</p>
-                    <p className="text-black/70 text-[10px] mt-0.5">Today · 06:30 AM · Marcus T.</p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center text-[10px] text-black/60">→</div>
-                      <div className="flex-1 h-1 bg-black/20 rounded-full overflow-hidden">
-                        <div className="h-full w-1/3 bg-black/40 rounded-full" />
+
+                  {/* Active trip card */}
+                  <div className="rounded-2xl p-3.5" style={{ background: "linear-gradient(135deg,#1A160F,#2A2010)" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wide">Confirmed</span>
                       </div>
-                      <span className="text-[10px] text-black/70">En Route</span>
+                      <span className="text-[#C9A84C] font-bold text-sm">$142</span>
+                    </div>
+                    <p className="text-white font-bold text-[11px] mb-1">Sydney Airport → CBD</p>
+                    <p className="text-gray-500 text-[9px]">Today · 06:30 AM · Marcus T.</p>
+                    <div className="mt-2.5 h-1 rounded-full" style={{ background: "#2A2A30" }}>
+                      <div className="h-full w-2/5 rounded-full" style={{ background: "#C9A84C" }} />
                     </div>
                   </div>
-                  {/* Quick book */}
-                  <div className="bg-[#1A1A1A] rounded-2xl p-4 space-y-2">
-                    <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Quick Book</p>
-                    <div className="bg-[#222] rounded-xl p-2.5 flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-400" />
-                      <p className="text-gray-400 text-[10px]">Pickup location...</p>
+
+                  {/* Location inputs */}
+                  <div className="rounded-2xl p-3" style={{ background: "#17171A", border: "1px solid #2A2A30" }}>
+                    <div className="flex items-center gap-2 py-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <p className="text-[10px]" style={{ color: "#4A4A55" }}>Pickup location</p>
                     </div>
-                    <div className="bg-[#222] rounded-xl p-2.5 flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[#C9A84C]" />
-                      <p className="text-gray-400 text-[10px]">Drop-off location...</p>
-                    </div>
-                    <div className="bg-[#C9A84C] rounded-xl p-2.5 text-center">
-                      <p className="text-black text-[10px] font-bold">Get Quote →</p>
+                    <div className="h-px" style={{ background: "#2A2A30" }} />
+                    <div className="flex items-center gap-2 py-2">
+                      <div className="w-2 h-2 rounded-full" style={{ background: "#C9A84C" }} />
+                      <p className="text-[10px]" style={{ color: "#4A4A55" }}>Drop-off location</p>
                     </div>
                   </div>
-                  {/* Vehicle options */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {[["Sedan","$65"],["SUV","$85"],["Luxury","$130"]].map(([name,price]) => (
-                      <div key={name} className="bg-[#1A1A1A] rounded-xl p-2 text-center">
-                        <p className="text-white text-[9px] font-bold">{name}</p>
-                        <p className="text-[#C9A84C] text-[9px]">{price}</p>
+
+                  {/* CTA button */}
+                  <div className="rounded-xl py-2.5 text-center"
+                    style={{ background: "linear-gradient(135deg,#C9A84C,#E8C97A,#A07830)" }}>
+                    <p className="text-black font-bold text-[11px]">Search & Get Instant Quote →</p>
+                  </div>
+
+                  {/* Quick book grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { icon: "✈", label: "Airport"  },
+                      { icon: "💼", label: "Corporate"},
+                      { icon: "💍", label: "Wedding"  },
+                      { icon: "⏱", label: "Hourly"   },
+                    ].map(s => (
+                      <div key={s.label} className="rounded-xl p-2.5"
+                        style={{ background: "#17171A", border: "1px solid #2A2A30" }}>
+                        <span className="text-sm">{s.icon}</span>
+                        <p className="text-white text-[10px] font-bold mt-1">{s.label}</p>
                       </div>
                     ))}
                   </div>
                 </div>
+
+                {/* Bottom tab bar */}
+                <div className="absolute bottom-0 inset-x-0 flex justify-around items-center py-2.5 px-2"
+                  style={{ background: "#0D0D0D", borderTop: "1px solid #C9A84C30" }}>
+                  {[["🏠","Home",true],["📋","Bookings",false],["👤","Profile",false]].map(([icon,lbl,active]) => (
+                    <div key={String(lbl)} className="flex flex-col items-center gap-0.5">
+                      <span className="text-base">{icon}</span>
+                      <span className="text-[8px] font-bold" style={{ color: active ? "#C9A84C" : "#4A4A55" }}>{lbl}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Gold glow */}
-              <div className="absolute -inset-4 rounded-[48px] bg-[#C9A84C]/5 -z-10 blur-xl" />
+              {/* Gold glow behind phone */}
+              <div className="absolute -inset-8 rounded-[52px] -z-10 blur-2xl opacity-30"
+                style={{ background: "radial-gradient(ellipse,#C9A84C,transparent 70%)" }} />
             </div>
           </div>
         </div>
