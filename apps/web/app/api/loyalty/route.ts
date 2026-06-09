@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 async function getSupa() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key?.startsWith("eyJ")) return null;
+  if (!url || (!key?.startsWith("eyJ") && !key?.startsWith("sb_secret_"))) return null;
   const { createClient } = await import("@supabase/supabase-js");
   return createClient(url, key);
 }

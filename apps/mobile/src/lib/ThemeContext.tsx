@@ -19,12 +19,12 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Always start dark — this is a luxury brand, dark mode is the primary experience
   const [mode, setMode] = useState<ThemeMode>("dark");
 
   useEffect(() => {
-    AsyncStorage.getItem("@theme_mode").then(saved => {
-      if (saved === "light" || saved === "dark") setMode(saved);
-    });
+    // Clear any stale light-mode preference and lock to dark
+    AsyncStorage.removeItem("@theme_mode");
   }, []);
 
   const toggleTheme = () => {

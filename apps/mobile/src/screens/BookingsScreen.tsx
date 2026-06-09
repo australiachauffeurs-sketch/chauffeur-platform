@@ -4,7 +4,6 @@ import {
   SafeAreaView, RefreshControl, ActivityIndicator, StatusBar,
 } from "react-native";
 import { supabase } from "../lib/supabase";
-import { API_BASE } from "../lib/config";
 
 const GOLD   = "#C9A84C";
 const BLACK  = "#09090B";
@@ -30,6 +29,8 @@ const FILTERS = [
   { key: "cancelled", label: "Cancelled" },
 ];
 
+const UPCOMING_STATUSES = ["pending", "confirmed", "driver_assigned", "in_progress"];
+
 export default function BookingsScreen({ navigation }: any) {
   const [bookings,   setBookings]   = useState<any[]>([]);
   const [filter,     setFilter]     = useState("all");
@@ -37,39 +38,90 @@ export default function BookingsScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [error,      setError]      = useState("");
   const [liveActive, setLiveActive] = useState(false);
+  const [userId,     setUserId]     = useState<string | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Get authenticated user ID from Supabase session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user?.id ?? null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError("");
+
     try {
-      const statusParam = filter === "upcoming"
-        ? "pending,confirmed,driver_assigned,in_progress"
-        : filter === "all" ? "" : filter;
-      const res  = await fetch(`${API_BASE}/api/booking/list?status=${statusParam}&limit=30`);
-      const data = await res.json();
-      setBookings(data.bookings || []);
+      // Query Supabase directly using the authenticated session
+      let query = supabase
+        .from("bookings")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      // Only filter by user if we have a userId — shows all if not authenticated
+      if (userId) {
+        query = query.eq("customer_id", userId);
+      }
+
+      // Apply status filter
+      if (filter === "upcoming") {
+        query = query.in("status", UPCOMING_STATUSES);
+      } else if (filter !== "all") {
+        query = query.eq("status", filter);
+      }
+
+      const { data, error: qErr } = await query;
+      if (qErr) throw new Error(qErr.message);
+      setBookings(data || []);
     } catch {
       setError("Could not load bookings. Pull down to retry.");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filter]);
+  }, [filter, userId]);
 
   useEffect(() => {
     load();
-    const channel = supabase.channel("bookings-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, payload => {
-        if (payload.eventType === "INSERT") setBookings(p => [payload.new as any, ...p]);
-        if (payload.eventType === "UPDATE") setBookings(p =>
-          p.map(b => b.id === payload.new.id ? { ...b, ...payload.new } : b));
+  }, [load]);
+
+  // Real-time subscription — filter to this user's bookings only
+  useEffect(() => {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    const channelFilter = userId
+      ? { event: "*" as const, schema: "public", table: "bookings", filter: `customer_id=eq.${userId}` }
+      : { event: "*" as const, schema: "public", table: "bookings" };
+
+    const channel = supabase
+      .channel(`bookings-live-${userId ?? "anon"}`)
+      .on("postgres_changes", channelFilter, payload => {
+        if (payload.eventType === "INSERT") {
+          setBookings(p => [payload.new as any, ...p]);
+        }
+        if (payload.eventType === "UPDATE") {
+          setBookings(p =>
+            p.map(b => b.id === payload.new.id ? { ...b, ...payload.new } : b));
+        }
+        if (payload.eventType === "DELETE") {
+          setBookings(p => p.filter(b => b.id !== payload.old.id));
+        }
       })
       .subscribe(status => setLiveActive(status === "SUBSCRIBED"));
+
     channelRef.current = channel;
     return () => { if (channelRef.current) supabase.removeChannel(channelRef.current); };
-  }, [load]);
+  }, [userId]);
 
   const formatDate = (d: string) => {
     if (!d) return "—";
@@ -84,7 +136,7 @@ export default function BookingsScreen({ navigation }: any) {
     <SafeAreaView style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={BLACK} />
 
-      {/* ── Header ─────────────────────────────────────── */}
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.title}>My Bookings</Text>
@@ -104,7 +156,7 @@ export default function BookingsScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* ── Filter Tabs ────────────────────────────────── */}
+      {/* Filter Tabs */}
       <ScrollView
         horizontal showsHorizontalScrollIndicator={false}
         style={styles.filterBar}
@@ -123,7 +175,7 @@ export default function BookingsScreen({ navigation }: any) {
         ))}
       </ScrollView>
 
-      {/* ── Content ────────────────────────────────────── */}
+      {/* Content */}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={GOLD} size="large" />

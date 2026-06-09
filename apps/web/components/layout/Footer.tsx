@@ -1,29 +1,29 @@
 import Link from "next/link";
 
 const services = [
-  "Airport Transfers",
-  "Corporate Travel",
-  "Wedding Chauffeur",
-  "Special Events",
-  "Hourly Hire",
-  "Long Distance",
+  { label: "Airport Transfers",   href: "/services/airport-transfers"  },
+  { label: "Corporate Chauffeur", href: "/services/corporate-chauffeur"},
+  { label: "Wedding Cars",        href: "/services/wedding-cars"       },
+  { label: "Wine Tours",          href: "/services/wine-tours"         },
+  { label: "Special Events",      href: "/services/special-events"     },
+  { label: "Corporate Accounts",  href: "/corporate-accounts"          },
 ];
 
-const cities = [
-  "Sydney",
-  "Melbourne",
-  "Brisbane",
-  "Perth",
-  "Adelaide",
-  "Gold Coast",
+const locations = [
+  { label: "Adelaide Airport",  href: "/locations/adelaide-airport" },
+  { label: "Adelaide CBD",      href: "/locations/adelaide-cbd"     },
+  { label: "Barossa Valley",    href: "/locations/barossa-valley"   },
+  { label: "McLaren Vale",      href: "/locations/mclaren-vale"     },
+  { label: "Glenelg",          href: "/locations/glenelg"          },
+  { label: "Mount Barker",      href: "/locations/mount-barker"     },
 ];
 
 const company = [
-  { label: "About Us", href: "/about"    },
-  { label: "Our Fleet", href: "/#fleet"  },
-  { label: "Careers",  href: "/careers"  },
-  { label: "Blog",     href: "/blog"     },
-  { label: "Contact",  href: "/contact"  },
+  { label: "About Us",     href: "/about"           },
+  { label: "Our Fleet",    href: "/fleet"           },
+  { label: "Pricing",      href: "/pricing"         },
+  { label: "FAQ",          href: "/faq"             },
+  { label: "Contact",      href: "/contact"         },
 ];
 
 export default function Footer() {
@@ -72,26 +72,26 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3">
               {services.map(s => (
-                <li key={s}>
-                  <a href="#" className="text-[#7A6F62] hover:text-[#C9A84C] text-sm transition-colors duration-200">
-                    {s}
-                  </a>
+                <li key={s.label}>
+                  <Link href={s.href} className="text-[#7A6F62] hover:text-[#C9A84C] text-sm transition-colors duration-200">
+                    {s.label}
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Cities */}
+          {/* Locations */}
           <div>
             <h4 className="text-[#1C1611] font-semibold mb-5 text-sm tracking-widest uppercase">
-              Coverage
+              Locations
             </h4>
             <ul className="space-y-3">
-              {cities.map(c => (
-                <li key={c}>
-                  <a href="#" className="text-[#7A6F62] hover:text-[#C9A84C] text-sm transition-colors duration-200">
-                    {c}
-                  </a>
+              {locations.map(l => (
+                <li key={l.label}>
+                  <Link href={l.href} className="text-[#7A6F62] hover:text-[#C9A84C] text-sm transition-colors duration-200">
+                    {l.label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -113,9 +113,14 @@ export default function Footer() {
               ))}
             </ul>
             <div className="space-y-2">
-              <p className="text-[#7A6F62] text-sm">1800 ELITE AU</p>
-              <p className="text-[#7A6F62] text-sm">bookings@elitechauffeurs.com.au</p>
-              <p className="text-[#7A6F62] text-sm">24/7 Service</p>
+              <a href="tel:+61880000000" className="block text-[#7A6F62] hover:text-[#C9A84C] text-sm transition-colors">
+                📞 (08) 8000 0000
+              </a>
+              <a href="mailto:bookings@elitechauffeurs.com.au" className="block text-[#7A6F62] hover:text-[#C9A84C] text-sm transition-colors">
+                ✉ bookings@elitechauffeurs.com.au
+              </a>
+              <p className="text-[#7A6F62] text-sm">🕐 Available 24 hours, 7 days</p>
+              <p className="text-[#7A6F62] text-sm">📍 Adelaide, South Australia 5000</p>
             </div>
           </div>
         </div>

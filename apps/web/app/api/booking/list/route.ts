@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const DEMO_BOOKINGS = [
   { id:"BK8821", status:"confirmed",   booking_type:"airport_transfer", vehicle_category:"sedan",  scheduled_at:"2026-06-28T06:30:00", passengers:2, luggage:3, pickup_address:"Sydney Airport T1",    dropoff_address:"1 Martin Place, Sydney CBD", total_amount:148.50, distance_km:24.3 },
@@ -20,11 +20,10 @@ export async function GET(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // â”€â”€ Demo mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Demo mode
     if (!supabaseUrl || supabaseUrl.includes("your-project") || (!serviceKey?.startsWith("eyJ") && !serviceKey?.startsWith("sb_secret_"))) {
       let data = [...DEMO_BOOKINGS];
 
-      // Filter by status
       if (status && status !== "all" && status !== "") {
         const statuses = status.split(",");
         data = data.filter(b => statuses.includes(b.status));
@@ -35,12 +34,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ bookings: paginated, total, page, limit, demo: true });
     }
 
-    // â”€â”€ Real Supabase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Extract customer_id from session â€” only return own bookings
-    let customerId: string | null = null;
-    const ecUserCookie = req.cookies.get("ec_user")?.value;
-    if (ecUserCookie) {
-      try { customerId = JSON.parse(ecUserCookie).id ?? null; } catch {}
+    // Real Supabase
+    // Support userId from query param, x-user-id header, or ec_user cookie
+    let customerId: string | null = searchParams.get("userId") ?? null;
+    if (!customerId) {
+      const ecUserCookie = req.cookies.get("ec_user")?.value;
+      if (ecUserCookie) {
+        try { customerId = JSON.parse(ecUserCookie).id ?? null; } catch {}
+      }
+    }
+    if (!customerId) {
+      customerId = req.headers.get("x-user-id") ?? null;
     }
 
     const { createClient } = await import("@supabase/supabase-js");

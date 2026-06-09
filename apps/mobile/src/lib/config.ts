@@ -5,4 +5,5 @@
  * - Android Emulator: http://10.0.2.2:3000
  * - Real device on same WiFi: http://<your-pc-ip>:3000
  */
-export const API_BASE = "http://192.168.1.14:3000";
+export const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL || "https://chauffeur-platform-web.vercel.app";

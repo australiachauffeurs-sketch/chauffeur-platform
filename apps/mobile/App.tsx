@@ -43,23 +43,57 @@ const Stack = createStackNavigator();
 /* ─────────────────────────────────────────────────────────────────────────
    AUTHENTICATED TABS
    ───────────────────────────────────────────────────────────────────────── */
+/* Tab bar icon component */
+function TabIcon({ icon, color, focused }: { icon: string; color: string; focused: boolean }) {
+  return (
+    <View style={{
+      width: 44, height: 32, borderRadius: 16,
+      justifyContent: "center", alignItems: "center",
+      backgroundColor: focused ? `${GOLD}18` : "transparent",
+    }}>
+      <Text style={{ fontSize: 20, color }}>{icon}</Text>
+    </View>
+  );
+}
+
 function HomeTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: DARK, borderTopColor: BORDER, borderTopWidth: 1, paddingBottom: 8, paddingTop: 6, height: 64 },
+        tabBarStyle: {
+          backgroundColor: "#0D0D0D",
+          borderTopColor: "#C9A84C30",
+          borderTopWidth: 1,
+          paddingBottom: 10,
+          paddingTop: 4,
+          height: 70,
+          elevation: 20,
+          shadowColor: "#C9A84C",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+        },
         tabBarActiveTintColor:   GOLD,
-        tabBarInactiveTintColor: GRAY,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarInactiveTintColor: "#4A4A4A",
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "700", letterSpacing: 0.3, marginTop: -2 },
       }}
     >
-      <Tab.Screen name="Home"     component={HomeScreen}
-        options={{ tabBarIcon: ({ color }: { color: string }) => <View style={{width:24,height:24,borderRadius:12,borderWidth:1.5,borderColor:color,justifyContent:'center',alignItems:'center'}}><Text style={{color,fontSize:11,fontWeight:'800'}}>H</Text></View> }} />
+      <Tab.Screen name="Home" component={HomeScreen}
+        options={{
+          tabBarLabel: "Home",
+          tabBarIcon: ({ color, focused }) => <TabIcon icon="🏠" color={color} focused={focused} />,
+        }} />
       <Tab.Screen name="Bookings" component={BookingsScreen}
-        options={{ tabBarIcon: ({ color }: { color: string }) => <View style={{width:24,height:24,borderRadius:12,borderWidth:1.5,borderColor:color,justifyContent:'center',alignItems:'center'}}><Text style={{color,fontSize:11,fontWeight:'800'}}>B</Text></View> }} />
-      <Tab.Screen name="Profile"  component={ProfileScreen}
-        options={{ tabBarIcon: ({ color }: { color: string }) => <View style={{width:24,height:24,borderRadius:12,borderWidth:1.5,borderColor:color,justifyContent:'center',alignItems:'center'}}><Text style={{color,fontSize:11,fontWeight:'800'}}>P</Text></View> }} />
+        options={{
+          tabBarLabel: "Bookings",
+          tabBarIcon: ({ color, focused }) => <TabIcon icon="📋" color={color} focused={focused} />,
+        }} />
+      <Tab.Screen name="Profile" component={ProfileScreen}
+        options={{
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ color, focused }) => <TabIcon icon="👤" color={color} focused={focused} />,
+        }} />
     </Tab.Navigator>
   );
 }
