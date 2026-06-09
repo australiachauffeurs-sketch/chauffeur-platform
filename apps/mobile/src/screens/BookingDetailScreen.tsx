@@ -35,6 +35,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
   const total       = b.total_amount || b.amount || 0;
   const pickup      = b.pickup_address || b.pickup;
   const dropoff     = b.dropoff_address || b.dropoff;
+  const shortId     = b.id ? `#${String(b.id).slice(0, 8).toUpperCase()}` : "—";
 
   // Rating state
   const [selectedRating,  setSelectedRating]  = React.useState(0);
@@ -98,7 +99,7 @@ export default function BookingDetailScreen({ route, navigation }: any) {
         {/* Status card */}
         <View style={[styles.statusCard, { backgroundColor: colors.darkSurface, borderColor: `${colors.gold}25` }]}>
           <View style={styles.statusRow}>
-            <Text style={[styles.bookingId, { color: colors.gray500 }]}>{b.id}</Text>
+            <Text style={[styles.bookingId, { color: colors.gray500 }]} numberOfLines={1}>{shortId}</Text>
             <View style={[styles.statusBadge, { backgroundColor:`${statusColor}20`, borderColor:`${statusColor}50` }]}>
               <Text style={[styles.statusText, { color:statusColor }]}>{b.status?.replace("_"," ").toUpperCase()}</Text>
             </View>
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
   headerTitle:     { fontWeight:"700", fontSize:17 },
   statusCard:      { borderRadius:20, padding:20, marginBottom:16, borderWidth:1 },
   statusRow:       { flexDirection:"row", justifyContent:"space-between", alignItems:"center", marginBottom:12 },
-  bookingId:       { fontSize:12, fontFamily:"monospace" },
+  bookingId:       { fontSize:12, fontWeight:"700", letterSpacing:0.5, flexShrink:1, marginRight:10 },
   statusBadge:     { borderRadius:20, paddingHorizontal:12, paddingVertical:5, borderWidth:1 },
   statusText:      { fontSize:11, fontWeight:"700" },
   amount:          { fontSize:36, fontWeight:"800", marginBottom:4 },

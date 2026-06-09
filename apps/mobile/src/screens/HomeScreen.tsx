@@ -4,6 +4,16 @@ import {
   StyleSheet, SafeAreaView, StatusBar, Dimensions,
   Image, Animated, Platform, FlatList,
 } from "react-native";
+import { supabase } from "../lib/supabase";
+
+const UPCOMING_STATUSES = ["pending", "confirmed", "driver_assigned", "in_progress"];
+
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  pending:         { label: "Pending",         color: "#FBBF24" },
+  confirmed:       { label: "Confirmed",       color: "#4ADE80" },
+  driver_assigned: { label: "Driver Assigned", color: "#A78BFA" },
+  in_progress:     { label: "In Progress",     color: "#C9A84C" },
+};
 
 const { width, height } = Dimensions.get("window");
 
@@ -23,23 +33,23 @@ const GREEN   = "#4ADE80";
 const CAR_SLIDES = [
   {
     id: "1",
-    uri: "https://images.unsplash.com/photo-1617814076668-8dfc6fe159ed?w=900&q=85",
-    category: "EXECUTIVE CLASS",
-    label: "Executive Sedan",
-    model: "Mercedes-Benz E-Class",
-    price: "From $65",
-  },
-  {
-    id: "2",
-    uri: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=85",
+    uri: "https://images.unsplash.com/photo-1563720223185-11003d516935?w=1000&q=80&auto=format&fit=crop",
     category: "LUXURY CLASS",
     label: "Luxury Sedan",
     model: "Mercedes-Benz S-Class",
     price: "From $130",
   },
   {
+    id: "2",
+    uri: "https://images.unsplash.com/photo-1617814076668-8dfc6fe159ed?w=1000&q=80&auto=format&fit=crop",
+    category: "EXECUTIVE CLASS",
+    label: "Executive Sedan",
+    model: "Mercedes-Benz E-Class",
+    price: "From $65",
+  },
+  {
     id: "3",
-    uri: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=900&q=85",
+    uri: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=1000&q=80&auto=format&fit=crop",
     category: "PREMIUM SUV",
     label: "Premium SUV",
     model: "Mercedes-Benz GLE",
@@ -47,11 +57,11 @@ const CAR_SLIDES = [
   },
   {
     id: "4",
-    uri: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=85",
-    category: "GROUP CLASS",
-    label: "Executive Van",
-    model: "Mercedes-Benz Viano",
-    price: "From $100",
+    uri: "https://images.unsplash.com/photo-1631295868223-63265b40d9e4?w=1000&q=80&auto=format&fit=crop",
+    category: "FIRST CLASS",
+    label: "Premium Limousine",
+    model: "BMW 7 Series",
+    price: "From $160",
   },
 ];
 
@@ -68,6 +78,31 @@ export default function HomeScreen({ navigation }: any) {
   const [dropoff,     setDropoff]     = useState("");
   const [service,     setService]     = useState("airport_transfer");
   const [activeSlide, setActiveSlide] = useState(0);
+  const [upcoming,    setUpcoming]    = useState<any | null>(null);
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  // Load the user's next upcoming booking (real data)
+  useEffect(() => {
+    let active = true;
+    const loadUpcoming = async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session?.user?.id;
+      if (!uid) { if (active) setUpcoming(null); return; }
+      const { data } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("customer_id", uid)
+        .in("status", UPCOMING_STATUSES)
+        .order("scheduled_at", { ascending: true })
+        .limit(1);
+      if (active) setUpcoming(data && data.length ? data[0] : null);
+    };
+    loadUpcoming();
+    const { data: listener } = supabase.auth.onAuthStateChange(() => loadUpcoming());
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
 
   const flatRef    = useRef<FlatList>(null);
   const scrollX    = useRef(new Animated.Value(0)).current;
@@ -142,7 +177,7 @@ export default function HomeScreen({ navigation }: any) {
           {/* ── Navbar ── */}
           <View style={styles.nav}>
             <View>
-              <Text style={styles.navGreeting}>Good morning</Text>
+              <Text style={styles.navGreeting}>{greeting}</Text>
               <Text style={styles.navBrand}>Elite Chauffeurs</Text>
             </View>
             <TouchableOpacity
@@ -188,16 +223,16 @@ export default function HomeScreen({ navigation }: any) {
               ))}
             </View>
           </View>
+        </View>
 
-          {/* ── Stats bar ── */}
-          <View style={styles.statsBar}>
-            {[["15K+","Rides"],["4.9★","Rating"],["6","Cities"],["24/7","Support"]].map(([v, l]) => (
-              <View key={l} style={styles.statCol}>
-                <Text style={styles.statVal}>{v}</Text>
-                <Text style={styles.statLbl}>{l}</Text>
-              </View>
-            ))}
-          </View>
+        {/* ── Stats bar (normal flow — no overlap) ── */}
+        <View style={styles.statsBar}>
+          {[["15K+","Rides"],["4.9★","Rating"],["6","Cities"],["24/7","Support"]].map(([v, l]) => (
+            <View key={l} style={styles.statCol}>
+              <Text style={styles.statVal}>{v}</Text>
+              <Text style={styles.statLbl}>{l}</Text>
+            </View>
+          ))}
         </View>
 
         {/* ════════════════════════════════════════════
@@ -277,40 +312,53 @@ export default function HomeScreen({ navigation }: any) {
         </View>
 
         {/* ════════════════════════════════════════════
-            UPCOMING RIDE (demo)
+            UPCOMING RIDE (real data — hidden when none)
         ════════════════════════════════════════════ */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Ride</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Bookings")}>
-              <Text style={styles.seeAll}>See all →</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            style={styles.upcomingCard}
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate("Bookings")}
-          >
-            <View style={styles.upcomingTop}>
-              <View style={styles.confirmedBadge}>
-                <View style={styles.confirmedDot} />
-                <Text style={styles.confirmedText}>Confirmed</Text>
+        {upcoming && (() => {
+          const meta = STATUS_META[upcoming.status] ?? { label: upcoming.status, color: GRAY };
+          const route =
+            `${upcoming.pickup_address || upcoming.pickup || "—"} → ${upcoming.dropoff_address || upcoming.dropoff || "—"}`;
+          const when = upcoming.scheduled_at
+            ? new Date(upcoming.scheduled_at).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" })
+            : "";
+          const amt = (upcoming.total_amount || upcoming.amount || 0);
+          const isActive = ["driver_assigned", "in_progress"].includes(upcoming.status);
+          return (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Upcoming Ride</Text>
+                <TouchableOpacity onPress={() => navigation.navigate("Bookings")}>
+                  <Text style={styles.seeAll}>See all →</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.upcomingAmt}>$142</Text>
-            </View>
-            <Text style={styles.upcomingRoute}>Sydney Airport → CBD</Text>
-            <Text style={styles.upcomingMeta}>Today · 06:30 AM  ·  Driver: Marcus T.</Text>
-            <View style={styles.progBar}>
-              <View style={styles.progFill} />
-            </View>
-            <View style={styles.upcomingBottom}>
-              <Text style={styles.upcomingEta}>Driver en route  ·  ~12 min</Text>
-              <TouchableOpacity onPress={() => navigation.navigate("RideTracking")}>
-                <Text style={styles.trackLink}>Track Live →</Text>
+              <TouchableOpacity
+                style={styles.upcomingCard}
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate("BookingDetail", { booking: upcoming })}
+              >
+                <View style={styles.upcomingTop}>
+                  <View style={[styles.confirmedBadge, { backgroundColor: `${meta.color}18`, borderColor: `${meta.color}40` }]}>
+                    <View style={[styles.confirmedDot, { backgroundColor: meta.color }]} />
+                    <Text style={[styles.confirmedText, { color: meta.color }]}>{meta.label}</Text>
+                  </View>
+                  <Text style={styles.upcomingAmt}>${amt.toFixed(2)}</Text>
+                </View>
+                <Text style={styles.upcomingRoute} numberOfLines={2}>{route}</Text>
+                <Text style={styles.upcomingMeta}>
+                  {when}{upcoming.vehicle_category || upcoming.vehicle ? `  ·  ${upcoming.vehicle_category || upcoming.vehicle}` : ""}
+                </Text>
+                <View style={styles.upcomingBottom}>
+                  <Text style={styles.upcomingEta}>Tap to view full details</Text>
+                  {isActive && (
+                    <TouchableOpacity onPress={() => navigation.navigate("RideTracking", { booking: upcoming })}>
+                      <Text style={styles.trackLink}>Track Live →</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        </View>
+          );
+        })()}
 
         {/* ════════════════════════════════════════════
             QUICK BOOK GRID
@@ -366,15 +414,15 @@ export default function HomeScreen({ navigation }: any) {
   );
 }
 
-const HERO_H = height * 0.58;
+const HERO_H = height * 0.52;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BLACK },
 
   // ── HERO ─────────────────────────────────────────────────────────
-  hero: { height: HERO_H, position: "relative", backgroundColor: BLACK },
-  slide: { width, height: HERO_H },
-  carImg: { width: "100%", height: "100%" },
+  hero: { height: HERO_H, position: "relative", backgroundColor: "#0C0C0F" },
+  slide: { width, height: HERO_H, backgroundColor: "#0C0C0F" },
+  carImg: { width: "100%", height: "100%", backgroundColor: "#0C0C0F" },
   overlayFull: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(6,5,3,0.48)" },
   overlayTop: { position: "absolute", top: 0, left: 0, right: 0, height: 140, backgroundColor: "rgba(6,5,3,0.65)" },
   overlayBottom: { position: "absolute", bottom: 0, left: 0, right: 0, height: 220, backgroundColor: "rgba(6,5,3,0.88)" },
@@ -390,7 +438,7 @@ const styles = StyleSheet.create({
   onlineBadge: { position: "absolute", bottom: 2, right: 2, width: 11, height: 11,
     borderRadius: 6, backgroundColor: GREEN, borderWidth: 2, borderColor: BLACK },
 
-  slideInfo: { position: "absolute", bottom: 60, left: 20, right: 20, zIndex: 20 },
+  slideInfo: { position: "absolute", bottom: 28, left: 20, right: 20, zIndex: 20 },
   categoryPill: { flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: "rgba(201,168,76,0.1)", borderWidth: 1, borderColor: GOLD_BRD,
     borderRadius: 20, paddingHorizontal: 11, paddingVertical: 5, alignSelf: "flex-start", marginBottom: 10 },
@@ -409,15 +457,15 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.25)" },
   dotActive: { width: 24, backgroundColor: GOLD, borderRadius: 3 },
 
-  statsBar: { position: "absolute", bottom: 0, left: 0, right: 0,
-    flexDirection: "row", backgroundColor: "rgba(8,8,8,0.9)",
-    borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.12)", paddingVertical: 10, zIndex: 20 },
+  statsBar: { flexDirection: "row", backgroundColor: SURFACE,
+    borderTopWidth: 1, borderTopColor: "rgba(201,168,76,0.12)",
+    borderBottomWidth: 1, borderBottomColor: "rgba(201,168,76,0.12)", paddingVertical: 14 },
   statCol: { flex: 1, alignItems: "center" },
   statVal: { color: GOLD, fontSize: 15, fontWeight: "900" },
   statLbl: { color: GRAY, fontSize: 9, fontWeight: "600", marginTop: 1, letterSpacing: 0.3 },
 
   // ── BOOKING CARD ─────────────────────────────────────────────────
-  bookCard: { marginHorizontal: 14, marginTop: -22, borderRadius: 24,
+  bookCard: { marginHorizontal: 14, marginTop: 16, borderRadius: 24,
     backgroundColor: CARD, borderWidth: 1, borderColor: "rgba(201,168,76,0.18)",
     padding: 20, elevation: 18,
     shadowColor: "#C9A84C", shadowOffset: { width: 0, height: 8 },

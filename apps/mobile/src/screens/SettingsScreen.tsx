@@ -10,7 +10,6 @@ export default function SettingsScreen({ navigation }: any) {
   const [locationAlways, setLocationAlways] = useState(false);
   const [analytics, setAnalytics]       = useState(true);
   const [marketing, setMarketing]       = useState(false);
-  const [darkMode, setDarkMode]         = useState(true);
   const [pushEnabled, setPushEnabled]   = useState(true);
   const [emailNotif, setEmailNotif]     = useState(true);
   const [smsNotif, setSmsNotif]         = useState(false);
@@ -92,7 +91,13 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Appearance */}
         <Text style={styles.sectionTitle}>Appearance</Text>
         <View style={styles.card}>
-          <SettingToggle label="Dark Mode" sub="Use dark theme throughout the app" value={darkMode} onToggle={setDarkMode} />
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.settingLabel}>Theme</Text>
+              <Text style={styles.settingSub}>Signature dark theme — crafted for the Elite experience</Text>
+            </View>
+            <View style={styles.themePill}><Text style={styles.themePillText}>Dark</Text></View>
+          </View>
         </View>
 
         {/* Legal */}
@@ -156,5 +161,7 @@ const styles = StyleSheet.create({
   chevron:         { color: COLORS.gray500, fontSize: 22 },
   comingSoon:      { backgroundColor: `${COLORS.gold}15`, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   comingSoonText:  { color: COLORS.gold, fontSize: 10, fontWeight: "700" },
+  themePill:       { backgroundColor: `${COLORS.gold}15`, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1, borderColor: `${COLORS.gold}40` },
+  themePillText:   { color: COLORS.gold, fontSize: 12, fontWeight: "700" },
   versionText:     { color: COLORS.gray500, fontSize: 11, textAlign: "center", marginTop: 24 },
 });
