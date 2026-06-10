@@ -4,9 +4,6 @@
     "slug": "elite-driver",
     "owner": "australia-chauffeurs",
     "version": "1.0.0",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "elitechauffeurdriver",
@@ -65,10 +62,7 @@
       [
         "expo-notifications",
         {
-          "color": "#C9A84C",
-          "sounds": [
-            "./assets/notification.wav"
-          ]
+          "color": "#C9A84C"
         }
       ]
     ],
@@ -76,9 +70,6 @@
       "eas": {
         "projectId": "a775934d-702e-4406-9317-53eb8743ad3f"
       }
-    },
-    "updates": {
-      "url": "https://u.expo.dev/a775934d-702e-4406-9317-53eb8743ad3f"
     },
     "web": {}
   }
