@@ -162,10 +162,21 @@ export default function VerifyOTPScreen() {
             <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800", marginBottom: 6 }}>
               {type === "signup" ? "Verify your email" : "Check your email"}
             </Text>
-            <Text style={{ color: GRAY, fontSize: 13, lineHeight: 20, marginBottom: 28 }}>
+            <Text style={{ color: GRAY, fontSize: 13, lineHeight: 20, marginBottom: 14 }}>
               We sent a 6-digit code to{"\n"}
               <Text style={{ color: GOLD, fontWeight: "600" }}>{email}</Text>
             </Text>
+
+            {/* Spam folder hint */}
+            <View style={{ backgroundColor: "rgba(201,168,76,0.08)", borderColor: "rgba(201,168,76,0.25)",
+              borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 22,
+              flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+              <Text style={{ fontSize: 14 }}>💡</Text>
+              <Text style={{ color: GRAY, fontSize: 12, lineHeight: 17, flex: 1 }}>
+                Can't find it? Check your <Text style={{ color: GOLD, fontWeight: "700" }}>Spam</Text> or{" "}
+                <Text style={{ color: GOLD, fontWeight: "700" }}>Junk</Text> folder — and mark it "Not spam" so future codes arrive in your inbox.
+              </Text>
+            </View>
 
             {/* OTP Boxes */}
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 24, gap: 8 }}>

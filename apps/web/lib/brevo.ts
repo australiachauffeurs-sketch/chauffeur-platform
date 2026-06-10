@@ -24,6 +24,7 @@ export async function sendOTPEmail({ to, code, type, firstName }: SendOTPOptions
 
   const senderEmail = process.env.BREVO_SENDER_EMAIL || "australiachauffeurs@gmail.com";
   const senderName  = process.env.BREVO_SENDER_NAME  || "Elite Chauffeurs";
+  const replyTo     = process.env.BREVO_REPLY_TO     || senderEmail;
 
   const subject = type === "signup"
     ? "Verify Your Email — Elite Chauffeurs"
@@ -96,6 +97,20 @@ export async function sendOTPEmail({ to, code, type, firstName }: SendOTPOptions
 </body>
 </html>`;
 
+  // Plain-text alternative — improves deliverability and inbox placement
+  const textContent =
+`${greeting}
+
+Use the verification code below ${purposeText}. This code expires in 10 minutes.
+
+Your verification code: ${code}
+
+If you didn't request this code, you can safely ignore this email.
+Never share this code with anyone — our team will never ask for it.
+
+© ${new Date().getFullYear()} Elite Chauffeurs Australia · Premium Transport Services
+This is an automated message, please do not reply.`;
+
   try {
     const response = await fetch(BREVO_API_URL, {
       method: "POST",
@@ -105,10 +120,14 @@ export async function sendOTPEmail({ to, code, type, firstName }: SendOTPOptions
         "api-key":      apiKey,
       },
       body: JSON.stringify({
-        sender:  { name: senderName, email: senderEmail },
-        to:      [{ email: to }],
+        sender:   { name: senderName, email: senderEmail },
+        replyTo:  { name: senderName, email: replyTo },
+        to:       [{ email: to }],
         subject,
         htmlContent,
+        textContent,
+        // Helps inbox placement & threading
+        headers:  { "X-Entity-Ref-ID": `otp-${type}-${Date.now()}` },
       }),
     });
 
