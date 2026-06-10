@@ -3,9 +3,12 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   SafeAreaView, Switch, Alert, Linking,
 } from "react-native";
-import { COLORS } from "../lib/theme";
+import { useTheme } from "../lib/ThemeContext";
 
 export default function SettingsScreen({ navigation }: any) {
+  const { colors, isDark, toggleTheme } = useTheme();
+  const COLORS = colors;
+  const styles = makeStyles(colors);
   const [biometric, setBiometric]       = useState(false);
   const [locationAlways, setLocationAlways] = useState(false);
   const [analytics, setAnalytics]       = useState(true);
@@ -91,13 +94,12 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Appearance */}
         <Text style={styles.sectionTitle}>Appearance</Text>
         <View style={styles.card}>
-          <View style={styles.settingRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.settingLabel}>Theme</Text>
-              <Text style={styles.settingSub}>Signature dark theme — crafted for the Elite experience</Text>
-            </View>
-            <View style={styles.themePill}><Text style={styles.themePillText}>Dark</Text></View>
-          </View>
+          <SettingToggle
+            label="Dark Mode"
+            sub={isDark ? "Signature dark theme" : "Light theme — white & gold"}
+            value={isDark}
+            onToggle={toggleTheme}
+          />
         </View>
 
         {/* Legal */}
@@ -147,7 +149,7 @@ export default function SettingsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS: any) => StyleSheet.create({
   container:       { flex: 1, backgroundColor: COLORS.black },
   header:          { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
   back:            { color: COLORS.gold, fontSize: 16 },

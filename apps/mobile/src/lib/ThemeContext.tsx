@@ -8,35 +8,42 @@ interface ThemeContextType {
   mode: ThemeMode;
   colors: typeof DARK_COLORS;
   toggleTheme: () => void;
+  setMode: (m: ThemeMode) => void;
   isDark: boolean;
 }
+
+const STORAGE_KEY = "@theme_mode";
 
 const ThemeContext = createContext<ThemeContextType>({
   mode: "dark",
   colors: DARK_COLORS,
   toggleTheme: () => {},
+  setMode: () => {},
   isDark: true,
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Always start dark — this is a luxury brand, dark mode is the primary experience
-  const [mode, setMode] = useState<ThemeMode>("dark");
+  // Dark is the signature/default experience; light is opt-in and persisted.
+  const [mode, setModeState] = useState<ThemeMode>("dark");
 
   useEffect(() => {
-    // Clear any stale light-mode preference and lock to dark
-    AsyncStorage.removeItem("@theme_mode");
+    AsyncStorage.getItem(STORAGE_KEY).then(saved => {
+      if (saved === "light" || saved === "dark") setModeState(saved);
+    });
   }, []);
 
-  const toggleTheme = () => {
-    const next = mode === "dark" ? "light" : "dark";
-    setMode(next);
-    AsyncStorage.setItem("@theme_mode", next);
+  const persist = (m: ThemeMode) => {
+    setModeState(m);
+    AsyncStorage.setItem(STORAGE_KEY, m).catch(() => {});
   };
+
+  const toggleTheme = () => persist(mode === "dark" ? "light" : "dark");
+  const setMode = (m: ThemeMode) => persist(m);
 
   const colors = mode === "dark" ? DARK_COLORS : LIGHT_COLORS;
 
   return (
-    <ThemeContext.Provider value={{ mode, colors, toggleTheme, isDark: mode === "dark" }}>
+    <ThemeContext.Provider value={{ mode, colors, toggleTheme, setMode, isDark: mode === "dark" }}>
       {children}
     </ThemeContext.Provider>
   );

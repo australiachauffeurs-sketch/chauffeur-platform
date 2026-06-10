@@ -7,7 +7,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { ThemeProvider } from "./src/lib/ThemeContext";
+import { ThemeProvider, useTheme } from "./src/lib/ThemeContext";
 
 import HomeScreen           from "./src/screens/HomeScreen";
 import BookScreen           from "./src/screens/BookScreen";
@@ -45,11 +45,12 @@ const Stack = createStackNavigator();
    ───────────────────────────────────────────────────────────────────────── */
 /* Tab bar icon component */
 function TabIcon({ icon, color, focused }: { icon: string; color: string; focused: boolean }) {
+  const { colors } = useTheme();
   return (
     <View style={{
       width: 44, height: 32, borderRadius: 16,
       justifyContent: "center", alignItems: "center",
-      backgroundColor: focused ? `${GOLD}18` : "transparent",
+      backgroundColor: focused ? `${colors.gold}22` : "transparent",
     }}>
       <Text style={{ fontSize: 20, color }}>{icon}</Text>
     </View>
@@ -57,25 +58,26 @@ function TabIcon({ icon, color, focused }: { icon: string; color: string; focuse
 }
 
 function HomeTabs() {
+  const { colors, isDark } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#0D0D0D",
-          borderTopColor: "#C9A84C30",
+          backgroundColor: colors.darkSurface,
+          borderTopColor: `${colors.gold}30`,
           borderTopWidth: 1,
           paddingBottom: 10,
           paddingTop: 4,
           height: 70,
           elevation: 20,
-          shadowColor: "#C9A84C",
+          shadowColor: colors.gold,
           shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.1,
+          shadowOpacity: isDark ? 0.1 : 0.15,
           shadowRadius: 12,
         },
-        tabBarActiveTintColor:   GOLD,
-        tabBarInactiveTintColor: "#4A4A4A",
+        tabBarActiveTintColor:   colors.gold,
+        tabBarInactiveTintColor: isDark ? "#4A4A4A" : colors.gray400,
         tabBarLabelStyle: { fontSize: 10, fontWeight: "700", letterSpacing: 0.3, marginTop: -2 },
       }}
     >
@@ -126,12 +128,25 @@ export default function App() {
 
   return (
     <ThemeProvider>
-    <SafeAreaProvider>
-      <StatusBar style="light" backgroundColor={BLACK} />
+      <SafeAreaProvider>
+        <RootNavigator initialRoute={initialRoute} />
+      </SafeAreaProvider>
+    </ThemeProvider>
+  );
+}
+
+/* Navigator lives inside ThemeProvider so it can react to the active theme */
+function RootNavigator({ initialRoute }: { initialRoute: string }) {
+  const { colors, isDark } = useTheme();
+  const cardStyle = { backgroundColor: colors.black };
+
+  return (
+    <>
+      <StatusBar style={isDark ? "light" : "dark"} backgroundColor={colors.black} />
       <NavigationContainer>
         <Stack.Navigator
           initialRouteName={initialRoute}
-          screenOptions={{ headerShown: false, cardStyle: { backgroundColor: BLACK } }}
+          screenOptions={{ headerShown: false, cardStyle }}
         >
           {/* AUTH FLOW — starts here for fresh installs */}
           <Stack.Screen name="Login"          component={LoginScreen} />
@@ -142,22 +157,21 @@ export default function App() {
 
           {/* APP FLOW — entered after login */}
           <Stack.Screen name="Main"            component={HomeTabs} />
-          <Stack.Screen name="Book"            component={BookScreen}          options={{ presentation: "modal", cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="BookingDetail"   component={BookingDetailScreen} options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="Notifications"   component={NotificationsScreen}  options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="PaymentMethods"  component={PaymentMethodsScreen} options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="Reviews"         component={ReviewsScreen}        options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="Support"         component={SupportScreen}        options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="EditProfile"     component={EditProfileScreen}    options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="SavedAddresses"  component={SavedAddressesScreen} options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="RideTracking"    component={RideTrackingScreen}   options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="Settings"        component={SettingsScreen}       options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="Chat"            component={ChatScreen}           options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="EditBooking"     component={EditBookingScreen}    options={{ cardStyle: { backgroundColor: BLACK } }} />
-          <Stack.Screen name="Referral"        component={ReferralScreen}       options={{ cardStyle: { backgroundColor: BLACK } }} />
+          <Stack.Screen name="Book"            component={BookScreen}          options={{ presentation: "modal", cardStyle }} />
+          <Stack.Screen name="BookingDetail"   component={BookingDetailScreen} options={{ cardStyle }} />
+          <Stack.Screen name="Notifications"   component={NotificationsScreen}  options={{ cardStyle }} />
+          <Stack.Screen name="PaymentMethods"  component={PaymentMethodsScreen} options={{ cardStyle }} />
+          <Stack.Screen name="Reviews"         component={ReviewsScreen}        options={{ cardStyle }} />
+          <Stack.Screen name="Support"         component={SupportScreen}        options={{ cardStyle }} />
+          <Stack.Screen name="EditProfile"     component={EditProfileScreen}    options={{ cardStyle }} />
+          <Stack.Screen name="SavedAddresses"  component={SavedAddressesScreen} options={{ cardStyle }} />
+          <Stack.Screen name="RideTracking"    component={RideTrackingScreen}   options={{ cardStyle }} />
+          <Stack.Screen name="Settings"        component={SettingsScreen}       options={{ cardStyle }} />
+          <Stack.Screen name="Chat"            component={ChatScreen}           options={{ cardStyle }} />
+          <Stack.Screen name="EditBooking"     component={EditBookingScreen}    options={{ cardStyle }} />
+          <Stack.Screen name="Referral"        component={ReferralScreen}       options={{ cardStyle }} />
         </Stack.Navigator>
       </NavigationContainer>
-    </SafeAreaProvider>
-    </ThemeProvider>
+    </>
   );
 }

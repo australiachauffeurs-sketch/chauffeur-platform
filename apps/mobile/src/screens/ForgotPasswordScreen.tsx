@@ -14,9 +14,13 @@ const MUTED  = "#9CA3AF";
 const ERROR  = "#F87171";
 
 import { API_BASE } from "../lib/config";
+import { useTheme } from "../lib/ThemeContext";
 
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation<any>();
+  const { colors } = useTheme();
+  const GOLD = colors.gold, BLACK = colors.black, DARK = colors.darkSurface,
+        BORDER = colors.darkBorder, GRAY = colors.gray500, MUTED = colors.gray400, ERROR = colors.red;
 
   const [email,   setEmail]   = useState("");
   const [loading, setLoading] = useState(false);

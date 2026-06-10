@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CommonActions } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import { API_BASE } from "../lib/config";
+import { useTheme } from "../lib/ThemeContext";
 
 const GOLD   = "#C9A84C";
 const BLACK  = "#09090B";
@@ -36,6 +37,10 @@ interface LoyaltyData {
 }
 
 export default function ProfileScreen({ navigation }: any) {
+  const { colors, isDark } = useTheme();
+  const GOLD = colors.gold, BLACK = colors.black, CARD = colors.darkSurface, MUTED = colors.darkMuted,
+        BORDER = colors.darkBorder, WHITE = colors.white, GRAY = colors.gray500, GRAY2 = colors.gray400, GREEN = colors.green;
+  const styles = makeStyles(colors);
   const [user,      setUser]      = useState<{ name: string; email: string; id?: string } | null>(null);
   const [loyalty,   setLoyalty]   = useState<LoyaltyData | null>(null);
   const [redeeming, setRedeeming] = useState(false);
@@ -131,7 +136,7 @@ export default function ProfileScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={BLACK} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={BLACK} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
         {/* ── Hero ───────────────────────────────────────────── */}
@@ -248,7 +253,10 @@ export default function ProfileScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: any) => {
+  const GOLD = c.gold, BLACK = c.black, CARD = c.darkSurface, MUTED = c.darkMuted,
+        BORDER = c.darkBorder, WHITE = c.white, GRAY = c.gray500, GRAY2 = c.gray400, GREEN = c.green;
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: BLACK },
 
   // Hero
@@ -318,4 +326,5 @@ const styles = StyleSheet.create({
   logoutIcon: { fontSize: 18 },
   logoutText: { color: "#F87171", fontWeight: "700", fontSize: 16 },
   version:    { color: "#374151", fontSize: 11, textAlign: "center" },
-});
+  });
+};

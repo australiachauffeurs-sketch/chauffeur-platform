@@ -6,6 +6,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
+import { useTheme } from "../lib/ThemeContext";
 
 const GOLD   = "#C9A84C";
 const BLACK  = "#09090B";
@@ -17,6 +18,9 @@ const ERROR  = "#F87171";
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
+  const { colors, isDark } = useTheme();
+  const GOLD = colors.gold, BLACK = colors.black, CARD = colors.darkSurface,
+        BORDER = colors.darkBorder, GRAY = colors.gray500, ERROR = colors.red;
 
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");

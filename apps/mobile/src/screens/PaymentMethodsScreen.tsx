@@ -3,7 +3,8 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   SafeAreaView, Alert, TextInput,
 } from "react-native";
-import { COLORS, SHADOWS } from "../lib/theme";
+import { SHADOWS } from "../lib/theme";
+import { useTheme } from "../lib/ThemeContext";
 
 type Card = {
   id: string;
@@ -15,6 +16,9 @@ type Card = {
 };
 
 export default function PaymentMethodsScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const COLORS = colors;
+  const styles = makeStyles(colors);
   const [cards, setCards]     = useState<Card[]>([]);
   const [adding, setAdding]  = useState(false);
   const [cardNum, setCardNum] = useState("");
@@ -173,7 +177,7 @@ export default function PaymentMethodsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS: any) => StyleSheet.create({
   container:      { flex: 1, backgroundColor: COLORS.black },
   header:         { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
   back:           { color: COLORS.gold, fontSize: 16 },

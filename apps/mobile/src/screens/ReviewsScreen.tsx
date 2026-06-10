@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   SafeAreaView, TextInput, Alert,
 } from "react-native";
-import { COLORS } from "../lib/theme";
+import { useTheme } from "../lib/ThemeContext";
 
 type Review = {
   id: string;
@@ -28,6 +28,9 @@ function StarRating({ rating, onRate, size = 24 }: { rating: number; onRate?: (r
 }
 
 export default function ReviewsScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const COLORS = colors;
+  const styles = makeStyles(colors);
   const [reviews]            = useState<Review[]>([]);
 
   const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "0";
@@ -107,7 +110,7 @@ export default function ReviewsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS: any) => StyleSheet.create({
   container:       { flex: 1, backgroundColor: COLORS.black },
   header:          { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
   back:            { color: COLORS.gold, fontSize: 16 },

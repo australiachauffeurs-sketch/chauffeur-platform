@@ -5,6 +5,7 @@ import {
   Image, Animated, Platform, FlatList,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { useTheme } from "../lib/ThemeContext";
 
 const UPCOMING_STATUSES = ["pending", "confirmed", "driver_assigned", "in_progress"];
 
@@ -74,6 +75,11 @@ const SERVICES = [
 ];
 
 export default function HomeScreen({ navigation }: any) {
+  const { colors, isDark } = useTheme();
+  const GOLD = colors.gold, BLACK = colors.black, SURFACE = colors.darkBg, CARD = colors.darkSurface,
+        MUTED = colors.darkMuted, BORDER = colors.darkBorder, WHITE = colors.white,
+        GRAY = colors.gray500, GRAY2 = colors.gray400, GREEN = colors.green;
+  const styles = makeStyles(colors);
   const [pickup,      setPickup]      = useState("");
   const [dropoff,     setDropoff]     = useState("");
   const [service,     setService]     = useState("airport_transfer");
@@ -133,7 +139,7 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={BLACK} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={BLACK} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -419,7 +425,10 @@ export default function HomeScreen({ navigation }: any) {
 
 const HERO_H = height * 0.52;
 
-const styles = StyleSheet.create({
+const makeStyles = (c: any) => {
+  const GOLD = c.gold, BLACK = c.black, SURFACE = c.darkBg, CARD = c.darkSurface, MUTED = c.darkMuted,
+        BORDER = c.darkBorder, WHITE = c.white, GRAY = c.gray500, GRAY2 = c.gray400, GREEN = c.green;
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: BLACK },
 
   // ── HERO ─────────────────────────────────────────────────────────
@@ -552,4 +561,5 @@ const styles = StyleSheet.create({
   promoCode: { color: "rgba(0,0,0,0.55)", fontSize: 12 },
   promoBtn: { backgroundColor: BLACK, borderRadius: 14, paddingHorizontal: 18, paddingVertical: 12, flexShrink: 0 },
   promoBtnText: { color: GOLD, fontWeight: "900", fontSize: 13, textAlign: "center" },
-});
+  });
+};

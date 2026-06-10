@@ -6,6 +6,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute, CommonActions } from "@react-navigation/native";
 import { API_BASE } from "../lib/config";
+import { useTheme } from "../lib/ThemeContext";
 
 const GOLD   = "#C9A84C";
 const BLACK  = "#09090B";
@@ -20,6 +21,9 @@ const RESEND_COOLDOWN = 60;
 export default function VerifyOTPScreen() {
   const navigation = useNavigation<any>();
   const route      = useRoute<any>();
+  const { colors, isDark } = useTheme();
+  const GOLD = colors.gold, BLACK = colors.black, CARD = colors.darkSurface,
+        BORDER = colors.darkBorder, GRAY = colors.gray500, ERROR = colors.red, GREEN = colors.green;
   const email      = route.params?.email as string ?? "";
   const type       = (route.params?.type as "signup" | "recovery") ?? "signup";
 
@@ -124,7 +128,7 @@ export default function VerifyOTPScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: BLACK }}
     >
-      <StatusBar barStyle="light-content" backgroundColor={BLACK} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={BLACK} />
       <View style={{ flex: 1, justifyContent: "center", padding: 24 }}>
 
         {/* Back */}

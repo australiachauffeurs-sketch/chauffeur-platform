@@ -6,6 +6,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { API_BASE } from "../lib/config";
+import { useTheme } from "../lib/ThemeContext";
 
 const GOLD   = "#C9A84C";
 const BLACK  = "#09090B";
@@ -31,6 +32,10 @@ const STRENGTH_COLOR = ["", ERROR, "#FBBF24", GREEN, "#10B981"];
 
 export default function SignupScreen() {
   const navigation = useNavigation<any>();
+  const { colors, isDark } = useTheme();
+  const GOLD = colors.gold, BLACK = colors.black, CARD = colors.darkSurface,
+        BORDER = colors.darkBorder, GRAY = colors.gray500, ERROR = colors.red, GREEN = colors.green;
+  const s = makeS(colors);
   const [form, setForm] = useState<Form>({ firstName:"", lastName:"", email:"", phone:"", password:"", confirm:"" });
   const [showPw,      setShowPw]      = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -74,7 +79,7 @@ export default function SignupScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex:1, backgroundColor: BLACK }}>
-      <StatusBar barStyle="light-content" backgroundColor={BLACK} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={BLACK} />
       <ScrollView contentContainerStyle={{ flexGrow:1, padding:24, paddingTop:52 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
         {/* Logo */}
@@ -193,13 +198,13 @@ export default function SignupScreen() {
   );
 }
 
-const s = {
-  label: { color:"#6B7280", fontSize:10, letterSpacing:1.5, marginBottom:8, fontWeight:"700" as const },
-  input: { backgroundColor:"#111113", borderWidth:1, borderColor:"#2A2A30", color:"#FFFFFF", padding:14, borderRadius:12, fontSize:14 },
+const makeS = (c: any) => ({
+  label: { color: c.gray500, fontSize:10, letterSpacing:1.5, marginBottom:8, fontWeight:"700" as const },
+  input: { backgroundColor: c.darkMuted, borderWidth:1, borderColor: c.darkBorder, color: c.white, padding:14, borderRadius:12, fontSize:14 },
   eye:   { position:"absolute" as const, right:14, top:0, bottom:0, justifyContent:"center" as const, padding:4 },
   errorBox: { backgroundColor:"rgba(248,113,113,0.08)", borderColor:"rgba(248,113,113,0.3)", borderWidth:1,
     borderRadius:12, padding:14, marginTop:14, flexDirection:"row" as const, alignItems:"flex-start" as const, gap:10 },
-  btn:     { marginTop:22, backgroundColor: GOLD, borderRadius:14, padding:17, alignItems:"center" as const,
-    shadowColor: GOLD, shadowOffset:{width:0,height:6}, shadowOpacity:0.4, shadowRadius:16, elevation:8 },
-  btnText: { color: BLACK, fontSize:15, fontWeight:"900" as const, letterSpacing:0.5 },
-};
+  btn:     { marginTop:22, backgroundColor: c.gold, borderRadius:14, padding:17, alignItems:"center" as const,
+    shadowColor: c.gold, shadowOffset:{width:0,height:6}, shadowOpacity:0.4, shadowRadius:16, elevation:8 },
+  btnText: { color: c.black, fontSize:15, fontWeight:"900" as const, letterSpacing:0.5 },
+});

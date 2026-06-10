@@ -15,6 +15,7 @@ const ERROR  = "#F87171";
 const GREEN  = "#34D399";
 
 import { API_BASE } from "../lib/config";
+import { useTheme } from "../lib/ThemeContext";
 
 function pwStrength(pw: string): number {
   if (!pw) return 0;
@@ -31,6 +32,9 @@ const STRENGTH_LABEL = ["", "Weak", "Fair", "Good", "Strong"];
 export default function ResetPasswordScreen() {
   const navigation = useNavigation<any>();
   const route      = useRoute<any>();
+  const { colors } = useTheme();
+  const GOLD = colors.gold, BLACK = colors.black, DARK = colors.darkSurface, BORDER = colors.darkBorder,
+        GRAY = colors.gray500, MUTED = colors.gray400, ERROR = colors.red, GREEN = colors.green;
 
   const email        = route.params?.email         as string | undefined;
   const accessToken  = route.params?.accessToken  as string | undefined;

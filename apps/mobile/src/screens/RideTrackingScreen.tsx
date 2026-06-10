@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   SafeAreaView, Animated, Dimensions, Linking, Alert,
 } from "react-native";
-import { COLORS } from "../lib/theme";
+import { useTheme } from "../lib/ThemeContext";
 import { supabase } from "../lib/supabase";
 
 const { width } = Dimensions.get("window");
@@ -30,6 +30,9 @@ interface DriverLocation {
 }
 
 export default function RideTrackingScreen({ route, navigation }: any) {
+  const { colors } = useTheme();
+  const COLORS = colors;
+  const styles = makeStyles(colors);
   const { booking } = route.params || {};
   const [currentStage, setCurrentStage] = useState(
     STATUS_TO_STAGE[booking?.status] ?? 1
@@ -310,7 +313,7 @@ export default function RideTrackingScreen({ route, navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS: any) => StyleSheet.create({
   container:        { flex: 1, backgroundColor: COLORS.black },
   header:           { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
   back:             { color: COLORS.gold, fontSize: 16 },

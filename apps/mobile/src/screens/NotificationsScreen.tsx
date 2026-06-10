@@ -3,7 +3,8 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   SafeAreaView, RefreshControl, Animated,
 } from "react-native";
-import { COLORS, SHADOWS } from "../lib/theme";
+import { SHADOWS } from "../lib/theme";
+import { useTheme } from "../lib/ThemeContext";
 
 type Notification = {
   id: string;
@@ -23,6 +24,9 @@ const ICON_MAP: Record<string, string> = {
 };
 
 export default function NotificationsScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const COLORS = colors;
+  const styles = makeStyles(colors);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [refreshing, setRefreshing]       = useState(false);
   const [filter, setFilter]               = useState<"all" | "unread">("all");
@@ -116,7 +120,7 @@ export default function NotificationsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS: any) => StyleSheet.create({
   container:       { flex: 1, backgroundColor: COLORS.black },
   header:          { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
   back:            { color: COLORS.gold, fontSize: 16 },

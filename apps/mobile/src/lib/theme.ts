@@ -2,6 +2,7 @@
 export const DARK_COLORS = {
   // Core backgrounds
   black:       "#0A0A0A",
+  darkBg:      "#111113",
   darkSurface: "#111111",
   darkMuted:   "#1E1E1E",
   darkBorder:  "#2A2A2A",
@@ -27,34 +28,33 @@ export const DARK_COLORS = {
   black10: "rgba(201,168,76,0.1)",
 };
 
-// ── Light Theme (white + gold) ───────────────────────────────────────────────
+// ── Light Theme (white + gold only) ──────────────────────────────────────────
 export const LIGHT_COLORS = {
-  // backgrounds
-  black:        "#FFFFFF",
-  darkBg:       "#F5F3EE",
-  darkSurface:  "#FFFFFF",
-  darkMuted:    "#F0EDE6",
-  darkBorder:   "#E2D9C8",
+  // backgrounds — clean whites with a subtle warm/gold tint
+  black:        "#FFFFFF",   // app background
+  darkBg:       "#FBF9F4",   // alt background
+  darkSurface:  "#FFFFFF",   // cards
+  darkMuted:    "#FAF7EF",   // inputs / muted fills
+  darkBorder:   "#ECE3CF",   // soft gold-tinted borders
 
-  // text
-  white:        "#1A1410",
-  gray500:      "#6B5E4E",
-  gray400:      "#8B7B6B",
-  gray300:      "#A89880",
+  // text — near-black for contrast on white
+  white:        "#1A1712",   // primary text
+  gray500:      "#7A6E5A",   // secondary text
+  gray400:      "#9B8E78",   // tertiary text
+  gray300:      "#B7A98E",
 
-  // brand
-  gold:         "#C9A84C",
-  goldLight:    "#D4A843",
-  goldDark:     "#A8873A",
+  // brand gold
+  gold:         "#B8923A",   // slightly deeper gold for contrast on white
+  goldLight:    "#C9A84C",
+  goldDark:     "#9A7A2E",
 
-  // status
-  green:        "#16A34A",
+  // status (kept readable on white)
+  green:        "#15803D",
   red:          "#DC2626",
   blue:         "#2563EB",
-  orange:       "#D97706",
+  orange:       "#C2620C",
 
-  // same as dark for consistency
-  black10:      "rgba(201,168,76,0.1)",
+  black10:      "rgba(184,146,58,0.1)",
 };
 
 // COLORS = current active theme — will be overridden by ThemeContext

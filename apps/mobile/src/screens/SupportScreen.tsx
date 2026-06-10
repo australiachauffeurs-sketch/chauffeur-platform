@@ -3,7 +3,8 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   SafeAreaView, TextInput, Linking, Alert,
 } from "react-native";
-import { COLORS, SHADOWS } from "../lib/theme";
+import { SHADOWS } from "../lib/theme";
+import { useTheme } from "../lib/ThemeContext";
 
 const FAQ = [
   { q: "How do I cancel a booking?",            a: "Go to My Bookings → select the booking → tap 'Cancel Booking'. Free cancellation up to 2 hours before pickup." },
@@ -22,6 +23,9 @@ const CONTACT_OPTIONS = [
 ];
 
 export default function SupportScreen({ navigation }: any) {
+  const { colors } = useTheme();
+  const COLORS = colors;
+  const styles = makeStyles(colors);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [message, setMessage]         = useState("");
   const [category, setCategory]       = useState("general");
@@ -146,7 +150,7 @@ export default function SupportScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS: any) => StyleSheet.create({
   container:       { flex: 1, backgroundColor: COLORS.black },
   header:          { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
   back:            { color: COLORS.gold, fontSize: 16 },

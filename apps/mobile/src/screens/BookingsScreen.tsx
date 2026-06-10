@@ -4,6 +4,7 @@ import {
   SafeAreaView, RefreshControl, ActivityIndicator, StatusBar,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { useTheme } from "../lib/ThemeContext";
 
 const GOLD   = "#C9A84C";
 const BLACK  = "#09090B";
@@ -32,6 +33,10 @@ const FILTERS = [
 const UPCOMING_STATUSES = ["pending", "confirmed", "driver_assigned", "in_progress"];
 
 export default function BookingsScreen({ navigation }: any) {
+  const { colors, isDark } = useTheme();
+  const GOLD = colors.gold, BLACK = colors.black, CARD = colors.darkSurface,
+        MUTED = colors.darkMuted, BORDER = colors.darkBorder, WHITE = colors.white, GRAY = colors.gray500;
+  const styles = makeStyles(colors);
   const [bookings,   setBookings]   = useState<any[]>([]);
   const [filter,     setFilter]     = useState("all");
   const [loading,    setLoading]    = useState(true);
@@ -134,7 +139,7 @@ export default function BookingsScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={BLACK} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={BLACK} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -264,7 +269,10 @@ export default function BookingsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: any) => {
+  const GOLD = c.gold, BLACK = c.black, CARD = c.darkSurface, MUTED = c.darkMuted,
+        BORDER = c.darkBorder, WHITE = c.white, GRAY = c.gray500;
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: BLACK },
 
   // Header
@@ -329,4 +337,5 @@ const styles = StyleSheet.create({
                  paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1,
                  borderColor: "rgba(201,168,76,0.25)" },
   detailBtnText:{ color: GOLD, fontSize: 12, fontWeight: "700" },
-});
+  });
+};
