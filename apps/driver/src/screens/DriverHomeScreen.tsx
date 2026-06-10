@@ -5,7 +5,6 @@ import {
 } from "react-native";
 import { COLORS } from "../lib/theme";
 import { useTheme } from "../lib/ThemeContext";
-import { usePushNotifications } from "../hooks/usePushNotifications";
 import { supabase } from "../lib/supabase";
 import { getDriver, DriverProfile } from "../lib/driver";
 
@@ -40,8 +39,6 @@ export default function DriverHomeScreen({ navigation }: any) {
   const { colors, isDark } = useTheme();
   const [driver,      setDriverState] = useState<DriverProfile | null>(null);
   const driverId = driver?.id ?? null;
-  // Register for push notifications once we know the driver's id
-  usePushNotifications(driverId);
   const [isOnline,    setIsOnline]    = useState(false);
   const [jobs,        setJobs]        = useState<any[]>([]);
   const [loading,     setLoading]     = useState(false);
