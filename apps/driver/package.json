@@ -1,7 +1,7 @@
 {
   "name": "elite-chauffeurs-driver",
   "version": "1.0.0",
-  "main": "App.tsx",
+  "main": "index.js",
   "scripts": {
     "start": "expo start --clear",
     "android": "expo start --android",
