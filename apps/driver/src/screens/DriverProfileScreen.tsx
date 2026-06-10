@@ -1,25 +1,52 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Switch, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Switch, Alert, Linking } from "react-native";
+import { CommonActions } from "@react-navigation/native";
 import { COLORS } from "../lib/theme";
 import { useTheme } from "../lib/ThemeContext";
+import { supabase } from "../lib/supabase";
+import { getDriver, clearDriver, DriverProfile } from "../lib/driver";
 
 export default function DriverProfileScreen({ navigation }: any) {
   const { colors, isDark, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [autoAccept, setAutoAccept]       = useState(false);
+  const [driver, setDriver]               = useState<DriverProfile | null>(null);
+
+  useEffect(() => { getDriver().then(setDriver); }, []);
+
+  const handleSignOut = () => {
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel" },
+      {
+        text: "Sign Out", style: "destructive",
+        onPress: async () => {
+          try { await supabase.auth.signOut(); } catch {}
+          await clearDriver();
+          navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: "Login" }] }));
+        },
+      },
+    ]);
+  };
+
+  const vehicleRows: [string, string][] = [
+    ["Make & Model", driver?.vehicleMakeModel || "Not set"],
+    ["Plate Number", driver?.vehiclePlate || "Not set"],
+    ["Year",         driver?.vehicleYear || "—"],
+    ["Category",     driver?.vehicleCategory || "—"],
+  ];
 
   const SETTINGS = [
     { label: "Push Notifications", sub: "Job alerts & updates",    toggle: true,  val: notifications, set: setNotifications },
     { label: "Auto-Accept Trips",   sub: "Accept within your zone", toggle: true,  val: autoAccept,    set: setAutoAccept    },
   ];
 
-  const LINKS = [
+  const LINKS: { label: string; sub: string; screen?: string; action?: () => void }[] = [
     { label: "Earnings",            sub: "View trip earnings & stats", screen: "Earnings" },
-    { label: "Documents",           sub: "Licence, registration",      screen: null       },
-    { label: "Bank Account",        sub: "Payout settings",            screen: null       },
-    { label: "Support",             sub: "24/7 driver helpline",       screen: null       },
-    { label: "Privacy & Security",  sub: "Account settings",           screen: null       },
-    { label: "Terms of Service",    sub: "Driver agreement",           screen: null       },
+    { label: "Documents",           sub: "Licence, registration",      action: () => Alert.alert("Documents", "Your licence, insurance and registration are managed by our dispatch team. Contact support to update them.") },
+    { label: "Bank Account",        sub: "Payout settings",            action: () => Alert.alert("Payout Settings", "To set up or change your payout bank account, contact dispatch@elitechauffeurs.com.au.") },
+    { label: "Support",             sub: "24/7 driver helpline",       action: () => Linking.openURL("tel:+611300123456") },
+    { label: "Privacy & Security",  sub: "Account settings",           action: () => Linking.openURL("https://elitechauffeurs.au/privacy") },
+    { label: "Terms of Service",    sub: "Driver agreement",           action: () => Linking.openURL("https://elitechauffeurs.au/terms") },
   ];
 
   return (
@@ -28,10 +55,10 @@ export default function DriverProfileScreen({ navigation }: any) {
         {/* Profile */}
         <View style={styles.profileHero}>
           <View style={[styles.avatar, { backgroundColor: colors.darkMuted, borderColor: colors.gold }]}>
-            <Text style={[styles.avatarText, { color: colors.gold }]}>M</Text>
+            <Text style={[styles.avatarText, { color: colors.gold }]}>{(driver?.name || "D").charAt(0).toUpperCase()}</Text>
           </View>
-          <Text style={[styles.name, { color: colors.white }]}>Marcus Thompson</Text>
-          <Text style={[styles.sub, { color: colors.gray500 }]}>marcus.t@driver.elitechauffeurs.com.au</Text>
+          <Text style={[styles.name, { color: colors.white }]}>{driver?.name || "Driver"}</Text>
+          <Text style={[styles.sub, { color: colors.gray500 }]}>{driver?.email || ""}</Text>
           <View style={[styles.verifiedBadge, { backgroundColor: `${colors.green}15`, borderColor: `${colors.green}40` }]}>
             <Text style={[styles.verifiedText, { color: colors.green }]}>✓ Verified Driver</Text>
           </View>
@@ -40,9 +67,9 @@ export default function DriverProfileScreen({ navigation }: any) {
         {/* Stats */}
         <View style={styles.statsRow}>
           {[
-            { label: "Total Trips", value: "312"  },
-            { label: "Rating",      value: "4.98★" },
-            { label: "Acceptance",  value: "96%"  },
+            { label: "Total Trips", value: driver?.totalTrips != null ? `${driver.totalTrips}` : "—" },
+            { label: "Rating",      value: driver?.rating ? `${driver.rating}★` : "New" },
+            { label: "Status",      value: "Active" },
           ].map((s) => (
             <View key={s.label} style={[styles.statBox, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
               <Text style={[styles.statValue, { color: colors.gold }]}>{s.value}</Text>
@@ -54,13 +81,7 @@ export default function DriverProfileScreen({ navigation }: any) {
         {/* Vehicle card */}
         <View style={[styles.vehicleCard, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
           <Text style={[styles.vehicleCardTitle, { color: colors.white }]}>My Vehicle</Text>
-          {[
-            ["Make & Model", "Mercedes-Benz E-Class W213"],
-            ["Plate Number", "ABC 123"],
-            ["Year",         "2023"],
-            ["Category",     "Executive Sedan"],
-            ["Capacity",     "3 passengers"],
-          ].map(([k, v]) => (
+          {vehicleRows.map(([k, v]) => (
             <View key={k} style={[styles.vehicleRow, { borderBottomColor: colors.darkBorder }]}>
               <Text style={[styles.vehicleKey, { color: colors.gray500 }]}>{k}</Text>
               <Text style={[styles.vehicleVal, { color: colors.white }]}>{v}</Text>
@@ -107,7 +128,7 @@ export default function DriverProfileScreen({ navigation }: any) {
           {LINKS.map((l, i) => (
             <TouchableOpacity
               key={l.label}
-              onPress={() => l.screen && navigation?.navigate?.(l.screen)}
+              onPress={() => l.screen ? navigation?.navigate?.(l.screen) : l.action?.()}
               style={[styles.menuItem, { borderBottomColor: colors.darkBorder }, i === LINKS.length - 1 && { borderBottomWidth: 0 }]}
             >
               <View style={{ flex: 1 }}>
@@ -122,12 +143,7 @@ export default function DriverProfileScreen({ navigation }: any) {
         {/* Sign out */}
         <TouchableOpacity
           style={[styles.signOutBtn, { borderColor: colors.red }]}
-          onPress={() =>
-            Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-              { text: "Cancel" },
-              { text: "Sign Out", style: "destructive", onPress: () => navigation.navigate("Login") },
-            ])
-          }
+          onPress={handleSignOut}
         >
           <Text style={[styles.signOutText, { color: colors.red }]}>Sign Out</Text>
         </TouchableOpacity>

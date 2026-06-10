@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !key?.startsWith("eyJ")) {
+  if (!url || (!key?.startsWith("eyJ") && !key?.startsWith("sb_secret_"))) {
     // Demo mode — accept without DB
     return NextResponse.json({ ok: true, demo: true });
   }

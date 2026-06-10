@@ -5,10 +5,11 @@ import {
 } from "react-native";
 import { COLORS } from "../lib/theme";
 import { useTheme } from "../lib/ThemeContext";
+import { supabase } from "../lib/supabase";
+import { setDriver } from "../lib/driver";
 
-const API = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
-const SUPABASE_URL  = process.env.EXPO_PUBLIC_SUPABASE_URL  || "";
-const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_CONFIGURED = !!SUPABASE_URL && !SUPABASE_URL.includes("your-project");
 
 export default function LoginScreen({ navigation }: any) {
   const { colors, isDark } = useTheme();
@@ -17,65 +18,66 @@ export default function LoginScreen({ navigation }: any) {
   const [loading,  setLoading]  = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) { Alert.alert("Required", "Please enter email and password."); return; }
+    const e = email.trim().toLowerCase();
+    if (!e || !password) { Alert.alert("Required", "Please enter email and password."); return; }
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok && !data.demo) {
-        Alert.alert("Login Failed", data.error || "Invalid credentials.");
+      // ── Demo mode (no Supabase configured) ─────────────────────────────
+      if (!SUPABASE_CONFIGURED) {
+        if (password.length >= 4) {
+          await setDriver({ id: "demo-driver", name: e.split("@")[0], email: e });
+          navigation.replace("Main");
+        } else {
+          Alert.alert("Login Failed", "Password must be at least 4 characters.");
+        }
         return;
       }
 
-      // After successful auth, check approval status
-      if (
-        SUPABASE_URL && !SUPABASE_URL.includes("your-project") &&
-        SUPABASE_ANON && !SUPABASE_ANON.includes("your-")
-      ) {
-        const { createClient } = await import("@supabase/supabase-js");
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-        const { data: driverProfile } = await supabase
-          .from("drivers")
-          .select("id, is_approved, onboarding_complete, name, phone")
-          .eq("email", email)
-          .single();
-
-        if (driverProfile) {
-          // Not yet completed onboarding — send to wizard
-          if (!driverProfile.onboarding_complete) {
-            navigation.replace("Onboarding", {
-              driverId: driverProfile.id,
-              name:     driverProfile.name,
-              email,
-              phone:    driverProfile.phone || "",
-            });
-            return;
-          }
-
-          // Completed onboarding but not yet approved
-          if (!driverProfile.is_approved) {
-            Alert.alert(
-              "Account Pending Approval",
-              "Your application is under review. You will receive an email once approved by our team.",
-              [{ text: "OK" }]
-            );
-            await supabase.auth.signOut();
-            return;
-          }
-        }
+      // ── Real auth — sign in with the persisted Supabase client ─────────
+      const { data: auth, error } = await supabase.auth.signInWithPassword({ email: e, password });
+      if (error || !auth?.user) {
+        Alert.alert("Login Failed", error?.message || "Incorrect email or password.");
+        return;
       }
 
-      // Navigate to main driver app
+      // Load the driver profile (onboarding + approval gating)
+      const { data: d } = await supabase
+        .from("drivers")
+        .select("id, is_approved, onboarding_complete, name, phone, vehicle_make, vehicle_model, vehicle_year, vehicle_plate, vehicle_category")
+        .eq("email", e)
+        .maybeSingle();
+
+      if (d) {
+        if (!d.onboarding_complete) {
+          navigation.replace("Onboarding", { driverId: d.id, name: d.name, email: e, phone: d.phone || "" });
+          return;
+        }
+        if (!d.is_approved) {
+          Alert.alert(
+            "Account Pending Approval",
+            "Your application is under review. You will receive an email once approved by our team."
+          );
+          await supabase.auth.signOut();
+          return;
+        }
+        await setDriver({
+          id: d.id,
+          name: d.name || e.split("@")[0],
+          email: e,
+          phone: d.phone,
+          vehicleMakeModel: [d.vehicle_make, d.vehicle_model].filter(Boolean).join(" ") || null,
+          vehiclePlate: d.vehicle_plate,
+          vehicleYear: d.vehicle_year,
+          vehicleCategory: d.vehicle_category,
+        });
+      } else {
+        // Authenticated but no driver row yet — store minimal identity
+        await setDriver({ id: auth.user.id, name: e.split("@")[0], email: e });
+      }
+
       navigation.replace("Main");
     } catch {
-      // Demo mode: allow any login
-      if (password.length >= 4) navigation.replace("Main");
-      else Alert.alert("Login Failed", "Password must be at least 4 characters.");
+      Alert.alert("Login Failed", "Something went wrong. Please try again.");
     } finally { setLoading(false); }
   };
 

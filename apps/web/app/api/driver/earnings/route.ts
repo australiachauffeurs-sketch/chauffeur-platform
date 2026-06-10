@@ -7,14 +7,14 @@ export async function GET(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !key?.startsWith("eyJ")) {
-    // Demo data
+  if (!url || (!key?.startsWith("eyJ") && !key?.startsWith("sb_secret_"))) {
+    // Demo data (only when Supabase is not configured)
     return NextResponse.json({
       stats: { total: 1840.50, tripCount: 12, avgPerTrip: 153.38, longestKm: 48 },
       trips: [
-        { id: "1", pickup_address: "Sydney Airport T1", total_amount: 185, scheduled_at: new Date().toISOString() },
-        { id: "2", pickup_address: "Martin Place, CBD",  total_amount: 120, scheduled_at: new Date().toISOString() },
-        { id: "3", pickup_address: "Bondi Beach",        total_amount: 95,  scheduled_at: new Date().toISOString() },
+        { id: "1", pickup_address: "Adelaide Airport T1", total_amount: 185, scheduled_at: new Date().toISOString() },
+        { id: "2", pickup_address: "King William St, CBD", total_amount: 120, scheduled_at: new Date().toISOString() },
+        { id: "3", pickup_address: "Glenelg Beach",        total_amount: 95,  scheduled_at: new Date().toISOString() },
       ],
     });
   }

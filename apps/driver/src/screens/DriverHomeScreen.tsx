@@ -3,37 +3,45 @@ import {
   View, Text, TouchableOpacity, ScrollView,
   StyleSheet, SafeAreaView, StatusBar, Switch, Alert, ActivityIndicator,
 } from "react-native";
-import { createClient } from "@supabase/supabase-js";
 import { COLORS } from "../lib/theme";
 import { useTheme } from "../lib/ThemeContext";
 import { usePushNotifications } from "../hooks/usePushNotifications";
+import { supabase } from "../lib/supabase";
+import { getDriver, DriverProfile } from "../lib/driver";
 
 const API = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
-const DRIVER_ID = "D001"; // TODO: get from auth
 
-const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL || "",
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ""
-);
-
+// Normalize either a raw bookings row or an already-normalized job into one shape
 const mapBookingToJob = (b: any) => ({
   id: b.id,
-  pickup: b.pickup_address,
-  dropoff: b.dropoff_address,
-  amount: b.total_amount,
-  scheduledAt: b.scheduled_at,
-  distanceKm: b.distance_km,
+  pickup: b.pickup ?? b.pickup_address,
+  dropoff: b.dropoff ?? b.dropoff_address,
+  amount: b.amount ?? b.total_amount,
+  scheduledAt: b.scheduledAt ?? b.scheduled_at,
+  distanceKm: b.distanceKm ?? b.distance_km,
+  durationMin: b.durationMin ?? b.duration_minutes ?? b.duration_min,
   passengers: b.passengers,
   luggage: b.luggage,
-  flightNumber: b.flight_number,
-  customer: b.customer_name || "Customer",
+  flightNumber: b.flightNumber ?? b.flight_number,
+  vehicle: b.vehicle ?? b.vehicle_category,
+  customer: b.customer ?? b.customer_name ?? "Customer",
+  customerId: b.customerId ?? b.customer_id ?? null,
+  customerPhone: b.customerPhone ?? b.customer_phone ?? null,
+  waypoints: b.waypoints ?? null,
   driverId: null,
 });
 
+const greetingFor = () => {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+};
+
 export default function DriverHomeScreen({ navigation }: any) {
   const { colors, isDark } = useTheme();
-  // Register for push notifications once the driver is on the home screen
-  usePushNotifications(DRIVER_ID);
+  const [driver,      setDriverState] = useState<DriverProfile | null>(null);
+  const driverId = driver?.id ?? null;
+  // Register for push notifications once we know the driver's id
+  usePushNotifications(driverId);
   const [isOnline,    setIsOnline]    = useState(false);
   const [jobs,        setJobs]        = useState<any[]>([]);
   const [loading,     setLoading]     = useState(false);
@@ -43,13 +51,34 @@ export default function DriverHomeScreen({ navigation }: any) {
   const [liveActive,  setLiveActive]  = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel>|null>(null);
 
+  // Load the signed-in driver's profile
+  useEffect(() => { getDriver().then(setDriverState); }, []);
+
+  // Load today's real earnings whenever the screen mounts / driver changes
+  const loadEarnings = useCallback(async () => {
+    if (!driverId) return;
+    try {
+      const res = await fetch(`${API}/api/driver/earnings?driverId=${driverId}&period=today`);
+      const data = await res.json();
+      setEarnings({ today: data.stats?.total || 0, trips: data.stats?.tripCount || 0 });
+    } catch { /* keep existing */ }
+  }, [driverId]);
+
+  useEffect(() => { loadEarnings(); }, [loadEarnings]);
+
+  // Refresh earnings each time the dashboard regains focus (e.g. after a trip)
+  useEffect(() => {
+    const unsub = navigation.addListener("focus", loadEarnings);
+    return unsub;
+  }, [navigation, loadEarnings]);
+
   // Fetch pending jobs
   const fetchJobs = useCallback(async () => {
     if (!isOnline) return;
     try {
       const res  = await fetch(`${API}/api/driver/pending-jobs`);
       const data = await res.json();
-      setJobs(data.jobs || []);
+      setJobs((data.jobs || []).map(mapBookingToJob));
     } catch { /* keep existing */ }
   }, [isOnline]);
 
@@ -108,6 +137,13 @@ export default function DriverHomeScreen({ navigation }: any) {
     };
   }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Polling fallback — guarantees new jobs surface even if RLS blocks realtime
+  useEffect(() => {
+    if (!isOnline) return;
+    const interval = setInterval(fetchJobs, 15000);
+    return () => clearInterval(interval);
+  }, [isOnline, fetchJobs]);
+
   // Toggle online/offline
   const handleToggle = async (val: boolean) => {
     setToggling(true);
@@ -115,31 +151,32 @@ export default function DriverHomeScreen({ navigation }: any) {
       await fetch(`${API}/api/driver/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driverId: DRIVER_ID, status: val ? "available" : "offline" }),
+        body: JSON.stringify({ driverId, status: val ? "available" : "offline" }),
       });
       setIsOnline(val);
-    } catch { setIsOnline(val); /* demo mode */ }
+    } catch { setIsOnline(val); /* offline-tolerant */ }
     finally { setToggling(false); }
   };
 
   // Accept a job
   const handleAccept = async (job: any) => {
     setAccepting(job.id);
+    const claimedJob = { ...job, driverId };
     try {
       const res  = await fetch(`${API}/api/driver/job/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: job.id, driverId: DRIVER_ID }),
+        body: JSON.stringify({ bookingId: job.id, driverId }),
       });
       const data = await res.json();
       if (data.success || data.demo) {
         setJobs(prev => prev.filter(j => j.id !== job.id));
-        setEarnings(prev => ({ today: prev.today + job.amount, trips: prev.trips + 1 }));
-        navigation.navigate("ActiveTrip", { job });
+        navigation.navigate("ActiveTrip", { job: claimedJob });
+      } else {
+        Alert.alert("Couldn't accept", data.error || "This job may have already been taken.");
       }
     } catch {
-      // Demo: navigate anyway
-      navigation.navigate("ActiveTrip", { job });
+      Alert.alert("Network error", "Could not accept the job. Please try again.");
     } finally { setAccepting(null); }
   };
 
@@ -159,11 +196,11 @@ export default function DriverHomeScreen({ navigation }: any) {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={[styles.greeting, { color: colors.gray400 }]}>Good morning</Text>
-            <Text style={[styles.driverName, { color: colors.white }]}>Marcus Thompson</Text>
+            <Text style={[styles.greeting, { color: colors.gray400 }]}>{greetingFor()}</Text>
+            <Text style={[styles.driverName, { color: colors.white }]}>{driver?.name || "Driver"}</Text>
           </View>
           <TouchableOpacity style={[styles.profileBtn, { backgroundColor: colors.darkMuted, borderColor: colors.gold }]} onPress={() => navigation.navigate("Profile")}>
-            <Text style={[styles.profileText, { color: colors.gold }]}>M</Text>
+            <Text style={[styles.profileText, { color: colors.gold }]}>{(driver?.name || "D").charAt(0).toUpperCase()}</Text>
           </TouchableOpacity>
         </View>
 
@@ -191,7 +228,7 @@ export default function DriverHomeScreen({ navigation }: any) {
           {[
             { label:"Today's Earnings", value:`$${earnings.today.toFixed(2)}` },
             { label:"Trips Today",      value:`${earnings.trips}` },
-            { label:"Rating",           value:"4.98★" },
+            { label:"Rating",           value: driver?.rating ? `${driver.rating}★` : "New" },
           ].map(s => (
             <View key={s.label} style={[styles.statCard, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
               <Text style={[styles.statValue, { color: colors.gold }]}>{s.value}</Text>
@@ -293,6 +330,8 @@ const styles = StyleSheet.create({
   onlineCardActive: { borderColor:`${COLORS.green}50`, backgroundColor:`${COLORS.green}08` },
   onlineLeft:       { flexDirection:"row", alignItems:"center", gap:12 },
   statusDot:        { width:10, height:10, borderRadius:5 },
+  onlineTitle:      { fontSize:15, fontWeight:"700", marginBottom:2 },
+  onlineSub:        { fontSize:12 },
   statsRow:         { flexDirection:"row", marginHorizontal:16, gap:8, marginBottom:20 },
   statCard:         { flex:1, backgroundColor:COLORS.darkSurface, borderRadius:14, padding:12, alignItems:"center", borderWidth:1, borderColor:COLORS.darkBorder },
   statValue:        { color:COLORS.gold, fontWeight:"700", fontSize:15, marginBottom:2 },

@@ -1,12 +1,13 @@
 import "react-native-gesture-handler";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { Text } from "react-native";
+import { Text, View, ActivityIndicator } from "react-native";
 import { ThemeProvider, useTheme } from "./src/lib/ThemeContext";
+import { getDriver } from "./src/lib/driver";
 
 import LoginScreen         from "./src/screens/LoginScreen";
 import DriverHomeScreen    from "./src/screens/DriverHomeScreen";
@@ -56,11 +57,27 @@ function DriverTabs() {
 
 function AppNavigator() {
   const { colors, isDark } = useTheme();
+  const [initialRoute, setInitialRoute] = useState<string | null>(null);
+
+  useEffect(() => {
+    getDriver()
+      .then(d => setInitialRoute(d ? "Main" : "Login"))
+      .catch(() => setInitialRoute("Login"));
+  }, []);
+
+  if (!initialRoute) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.black, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator color={colors.gold} size="large" />
+      </View>
+    );
+  }
+
   return (
     <>
       <StatusBar style={isDark ? "dark" : "dark"} backgroundColor={colors.black} />
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.black } }}>
+        <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.black } }}>
           <Stack.Screen name="Login"      component={LoginScreen}      />
           <Stack.Screen name="Main"       component={DriverTabs}       />
           <Stack.Screen name="ActiveTrip" component={ActiveTripScreen}

@@ -160,9 +160,13 @@ export default function ActiveTripScreen({ route, navigation }: any) {
   };
 
   const callCustomer = () => {
-    Alert.alert("Call Customer", `Call ${job?.customer}?`, [
+    if (!job?.customerPhone) {
+      Alert.alert("No phone number", "This customer hasn't shared a phone number. Use in-app chat to reach them.");
+      return;
+    }
+    Alert.alert("Call Customer", `Call ${job?.customer || "the customer"}?`, [
       { text: "Cancel" },
-      { text: "Call", onPress: () => Linking.openURL("tel:+61400111222") },
+      { text: "Call", onPress: () => Linking.openURL(`tel:${job.customerPhone}`) },
     ]);
   };
 

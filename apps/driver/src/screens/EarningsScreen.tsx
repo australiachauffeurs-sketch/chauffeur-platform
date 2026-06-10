@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useTheme } from "../lib/ThemeContext";
+import { getDriver } from "../lib/driver";
 
 const API = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
-const DRIVER_ID = "D001"; // same hardcoded value as rest of app
 
 export default function EarningsScreen({ navigation }: any) {
   const { colors, isDark } = useTheme();
@@ -11,23 +11,23 @@ export default function EarningsScreen({ navigation }: any) {
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"today" | "week" | "month" | "all">("week");
+  const [driverId, setDriverId] = useState<string | null>(null);
+
+  useEffect(() => { getDriver().then(d => setDriverId(d?.id ?? null)); }, []);
 
   useEffect(() => {
+    if (!driverId) return;
     setLoading(true);
-    fetch(`${API}/api/driver/earnings?driverId=${DRIVER_ID}&period=${period}`)
+    fetch(`${API}/api/driver/earnings?driverId=${driverId}&period=${period}`)
       .then(r => r.json())
       .then(data => { setStats(data.stats); setTrips(data.trips || []); setLoading(false); })
       .catch(() => {
-        // Fallback demo data
-        setStats({ total: 2318.00, tripCount: 18, avgPerTrip: 128.78, longestKm: 48 });
-        setTrips([
-          { id: "1", pickup_address: "Sydney Airport T1", total_amount: 185, scheduled_at: new Date().toISOString() },
-          { id: "2", pickup_address: "Martin Place, CBD",  total_amount: 120, scheduled_at: new Date().toISOString() },
-          { id: "3", pickup_address: "Bondi Beach",        total_amount: 95,  scheduled_at: new Date().toISOString() },
-        ]);
+        // On error, show zeroed state rather than fake earnings
+        setStats({ total: 0, tripCount: 0, avgPerTrip: 0, longestKm: 0 });
+        setTrips([]);
         setLoading(false);
       });
-  }, [period]);
+  }, [period, driverId]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.black }]}>
