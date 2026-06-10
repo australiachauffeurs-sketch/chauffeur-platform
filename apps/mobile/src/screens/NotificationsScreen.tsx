@@ -22,19 +22,8 @@ const ICON_MAP: Record<string, string> = {
   payment: "$",
 };
 
-const SAMPLE: Notification[] = [
-  { id: "1", type: "booking",  title: "Booking Confirmed",       message: "Your ride to Sydney Airport on Jul 12 at 6:30 AM has been confirmed.",                    time: "2 min ago",  read: false },
-  { id: "2", type: "driver",   title: "Driver Assigned",         message: "Marcus T. has been assigned to your upcoming trip. 4.9 rating.",                       time: "15 min ago", read: false },
-  { id: "3", type: "payment",  title: "Payment Received",        message: "Payment of $142.50 for booking #EC8F2A processed successfully.",                          time: "1 hr ago",   read: false },
-  { id: "4", type: "promo",    title: "Weekend Special",      message: "Get 20% off all weekend bookings. Use code WEEKEND20 at checkout.",                       time: "3 hrs ago",  read: true  },
-  { id: "5", type: "booking",  title: "Trip Completed",          message: "Your trip from CBD to Melbourne Airport has been completed. Rate your experience!",        time: "Yesterday",  read: true  },
-  { id: "6", type: "system",   title: "App Update Available",    message: "A new version of Elite Chauffeurs is available with improved tracking features.",          time: "2 days ago", read: true  },
-  { id: "7", type: "promo",    title: "Refer & Earn",            message: "Share your referral code ELITE2026 and earn $25 credit for each friend who books.",        time: "3 days ago", read: true  },
-  { id: "8", type: "driver",   title: "Driver En Route",         message: "Your chauffeur is on the way. Estimated arrival in 8 minutes.",                           time: "5 days ago", read: true  },
-];
-
 export default function NotificationsScreen({ navigation }: any) {
-  const [notifications, setNotifications] = useState<Notification[]>(SAMPLE);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [refreshing, setRefreshing]       = useState(false);
   const [filter, setFilter]               = useState<"all" | "unread">("all");
 

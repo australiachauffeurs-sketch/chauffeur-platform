@@ -14,13 +14,8 @@ type Card = {
   icon: string;
 };
 
-const SAMPLE_CARDS: Card[] = [
-  { id: "1", brand: "Visa",       last4: "4242", expiry: "12/28", isDefault: true,  icon: "" },
-  { id: "2", brand: "Mastercard", last4: "8888", expiry: "09/27", isDefault: false, icon: "" },
-];
-
 export default function PaymentMethodsScreen({ navigation }: any) {
-  const [cards, setCards]     = useState<Card[]>(SAMPLE_CARDS);
+  const [cards, setCards]     = useState<Card[]>([]);
   const [adding, setAdding]  = useState(false);
   const [cardNum, setCardNum] = useState("");
   const [expiry, setExpiry]   = useState("");
@@ -67,6 +62,16 @@ export default function PaymentMethodsScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        {/* Empty state when no cards saved */}
+        {cards.length === 0 && !adding && (
+          <View style={styles.emptyCards}>
+            <Text style={styles.emptyCardsTitle}>No payment methods yet</Text>
+            <Text style={styles.emptyCardsSub}>
+              Add a card for faster, contactless checkout on every booking.
+            </Text>
+          </View>
+        )}
+
         {/* Saved Cards */}
         {cards.map(card => (
           <View key={card.id} style={[styles.cardItem, card.isDefault && styles.cardItemDefault]}>
@@ -151,10 +156,10 @@ export default function PaymentMethodsScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>Billing</Text>
         </View>
         {[
-          { icon: "",  label: "Invoices & Receipts",  sub: "View trip receipts and tax invoices" },
-          { icon: "",  label: "Corporate Billing",    sub: "Set up cost centres and PO numbers" },
+          { icon: "",  label: "Invoices & Receipts",  sub: "View trip receipts and tax invoices", action: () => navigation.navigate("Bookings") },
+          { icon: "",  label: "Corporate Billing",    sub: "Set up cost centres and PO numbers",   action: () => Alert.alert("Corporate Billing", "To set up a corporate account with consolidated invoicing, cost centres and PO numbers, contact our team at corporate@elitechauffeurs.au.") },
         ].map(item => (
-          <TouchableOpacity key={item.label} style={styles.menuItem}>
+          <TouchableOpacity key={item.label} style={styles.menuItem} onPress={item.action}>
             <Text style={styles.menuIcon}>{item.icon}</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.menuLabel}>{item.label}</Text>
@@ -200,6 +205,9 @@ const styles = StyleSheet.create({
   cancelFormText: { color: COLORS.gray400, fontWeight: "600", fontSize: 15 },
   saveBtn:        { flex: 2, backgroundColor: COLORS.gold, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   saveBtnText:    { color: COLORS.black, fontWeight: "700", fontSize: 15 },
+  emptyCards:     { alignItems: "center", paddingVertical: 28, paddingHorizontal: 16, marginBottom: 8 },
+  emptyCardsTitle:{ color: COLORS.white, fontSize: 17, fontWeight: "800", marginBottom: 6 },
+  emptyCardsSub:  { color: COLORS.gray500, fontSize: 13, textAlign: "center", lineHeight: 19 },
   infoCard:       { flexDirection: "row", alignItems: "flex-start", backgroundColor: COLORS.darkMuted, borderRadius: 14, padding: 16, gap: 12, marginBottom: 24 },
   infoIcon:       { fontSize: 22 },
   infoTitle:      { color: COLORS.white, fontWeight: "600", fontSize: 14, marginBottom: 4 },

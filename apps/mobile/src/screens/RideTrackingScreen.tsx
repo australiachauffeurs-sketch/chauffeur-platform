@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  SafeAreaView, Animated, Dimensions, Linking,
+  SafeAreaView, Animated, Dimensions, Linking, Alert,
 } from "react-native";
 import { COLORS } from "../lib/theme";
 import { supabase } from "../lib/supabase";
@@ -150,8 +150,8 @@ export default function RideTrackingScreen({ route, navigation }: any) {
   }, [driverId, bookingId]);
 
   const driver = booking?.driver || {
-    name: "Marcus Thompson", rating: 4.9, trips: 1247,
-    phone: "+611300123456", vehicle: "Mercedes-Benz E-Class", plate: "EC 2026",
+    name: "Awaiting driver", rating: null, trips: null,
+    phone: "", vehicle: booking?.vehicle_category || booking?.vehicle || "Luxury vehicle", plate: "",
   };
 
   const openMaps = () => {
@@ -248,20 +248,34 @@ export default function RideTrackingScreen({ route, navigation }: any) {
       <View style={styles.driverCard}>
         <View style={styles.driverInfo}>
           <View style={styles.driverAvatar}>
-            <Text style={styles.driverAvatarText}>{driver.name?.[0] || "M"}</Text>
+            <Text style={styles.driverAvatarText}>{booking?.driver ? (driver.name?.[0] || "D") : "…"}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.driverName}>{driver.name}</Text>
-            <Text style={styles.driverMeta}>{driver.rating} ★ · {driver.trips} trips</Text>
-            <Text style={styles.driverVehicle}>{driver.vehicle} · {driver.plate}</Text>
+            <Text style={styles.driverMeta}>
+              {booking?.driver
+                ? `${driver.rating ?? "—"} ★ · ${driver.trips ?? 0} trips`
+                : "Your chauffeur will be assigned shortly"}
+            </Text>
+            <Text style={styles.driverVehicle}>{[driver.vehicle, driver.plate].filter(Boolean).join(" · ")}</Text>
           </View>
         </View>
         <View style={styles.driverActions}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => Linking.openURL(`tel:${driver.phone}`)}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => driver.phone
+              ? Linking.openURL(`tel:${driver.phone}`)
+              : Alert.alert("No driver yet", "You'll be able to call your chauffeur once one is assigned.")}
+          >
             <Text style={[styles.actionIcon, { color: COLORS.gold }]}>Call</Text>
             <Text style={styles.actionLabel}>Call</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => booking?.driver
+              ? navigation.navigate("Chat", { bookingId: booking?.id, driverName: driver.name })
+              : Alert.alert("No driver yet", "You'll be able to message your chauffeur once one is assigned.")}
+          >
             <Text style={[styles.actionIcon, { color: COLORS.gold }]}>Msg</Text>
             <Text style={styles.actionLabel}>Message</Text>
           </TouchableOpacity>

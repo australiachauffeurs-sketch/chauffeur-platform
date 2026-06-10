@@ -57,7 +57,7 @@ export default function ProfileScreen({ navigation }: any) {
           const j = await r.json();
           setLoyalty(j);
         } catch {
-          setLoyalty({ points: 350, tier: "Silver", nextTier: { next: "Gold", needed: 150 } });
+          setLoyalty({ points: 0, tier: "Silver", nextTier: { next: "Gold", needed: 500 } });
         }
 
         // Load booking stats from Supabase
@@ -71,7 +71,7 @@ export default function ProfileScreen({ navigation }: any) {
             const total = completed.reduce((s, b) => s + (b.total_amount || 0), 0);
             setStats({
               trips: data.length,
-              rating: "4.9★",
+              rating: completed.length ? "5.0★" : "New",
               spent: `$${total.toFixed(0)}`,
             });
           }

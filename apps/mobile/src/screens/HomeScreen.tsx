@@ -279,7 +279,10 @@ export default function HomeScreen({ navigation }: any) {
             </View>
             <View style={styles.divRow}>
               <View style={styles.divLine} />
-              <TouchableOpacity style={styles.swapBtn}>
+              <TouchableOpacity
+                style={styles.swapBtn}
+                onPress={() => { setPickup(dropoff); setDropoff(pickup); }}
+              >
                 <Text style={{ color: GOLD, fontSize: 18 }}>⇅</Text>
               </TouchableOpacity>
             </View>

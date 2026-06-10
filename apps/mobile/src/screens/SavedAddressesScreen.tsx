@@ -13,16 +13,10 @@ type Address = {
   isDefault: boolean;
 };
 
-const SAMPLE: Address[] = [
-  { id: "1", label: "Home",       icon: "Home",    address: "42 Harbour Street, Sydney NSW 2000",          isDefault: true },
-  { id: "2", label: "Work",       icon: "Work",    address: "Level 12, 200 George Street, Sydney NSW 2000", isDefault: false },
-  { id: "3", label: "Airport",    icon: "Airport", address: "Sydney Kingsford Smith Airport, Mascot NSW",   isDefault: false },
-];
-
 const ICON_OPTIONS = ["Home", "Work", "Airport", "Hotel", "Hospital", "School", "Gym", "Food"];
 
 export default function SavedAddressesScreen({ navigation }: any) {
-  const [addresses, setAddresses]   = useState<Address[]>(SAMPLE);
+  const [addresses, setAddresses]   = useState<Address[]>([]);
   const [adding, setAdding]         = useState(false);
   const [editId, setEditId]         = useState<string | null>(null);
   const [newLabel, setNewLabel]     = useState("");

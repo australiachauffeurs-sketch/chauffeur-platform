@@ -78,7 +78,10 @@ export default function EditProfileScreen({ navigation }: any) {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{(firstName || "U").charAt(0).toUpperCase()}</Text>
           </View>
-          <TouchableOpacity style={styles.changePhotoBtn}>
+          <TouchableOpacity
+            style={styles.changePhotoBtn}
+            onPress={() => Alert.alert("Profile Photo", "Custom profile photos are coming soon. For now your initial is shown.")}
+          >
             <Text style={styles.changePhotoText}>Change Photo</Text>
           </TouchableOpacity>
         </View>
@@ -112,7 +115,7 @@ export default function EditProfileScreen({ navigation }: any) {
 
           <View style={styles.inputBox}>
             <Text style={styles.label}>City</Text>
-            <TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="Sydney" placeholderTextColor={COLORS.gray500} />
+            <TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="Adelaide" placeholderTextColor={COLORS.gray500} />
           </View>
 
           <View style={styles.inputBox}>
