@@ -2,6 +2,7 @@
   "expo": {
     "name": "Elite Chauffeurs Driver",
     "slug": "elite-driver",
+    "owner": "australia-chauffeurs",
     "version": "1.0.0",
     "runtimeVersion": {
       "policy": "appVersion"
@@ -22,7 +23,11 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location in the background to track your position during active trips.",
         "NSCameraUsageDescription": "We need camera access for document uploads.",
         "NSPhotoLibraryUsageDescription": "We need photo library access for document uploads.",
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -40,7 +45,12 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "VIBRATE",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "plugins": [
@@ -56,17 +66,19 @@
         "expo-notifications",
         {
           "color": "#C9A84C",
-          "sounds": ["./assets/notification.wav"]
+          "sounds": [
+            "./assets/notification.wav"
+          ]
         }
       ]
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "a775934d-702e-4406-9317-53eb8743ad3f"
       }
     },
     "updates": {
-      "url": "https://u.expo.dev/elite-driver"
+      "url": "https://u.expo.dev/a775934d-702e-4406-9317-53eb8743ad3f"
     },
     "web": {}
   }
