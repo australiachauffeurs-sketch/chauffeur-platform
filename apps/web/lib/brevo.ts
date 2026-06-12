@@ -155,3 +155,64 @@ export function generateOTP(): string {
   const num = crypto.randomInt(0, 1000000);
   return String(num).padStart(6, "0");
 }
+
+/**
+ * Notify the business of a new website lead (quote request).
+ */
+export async function sendLeadEmail(lead: {
+  name?: string;
+  email?: string;
+  phone?: string;
+  pickup?: string;
+  dropoff?: string;
+  service?: string;
+  travelDate?: string;
+  sourcePage?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return { success: false, error: "Email service not configured" };
+
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || "australiachauffeurs@gmail.com";
+  const senderName  = process.env.BREVO_SENDER_NAME  || "Elite Chauffeurs";
+  const notifyTo    = process.env.LEAD_NOTIFY_EMAIL  || senderEmail;
+
+  const rows = [
+    ["Name", lead.name], ["Phone", lead.phone], ["Email", lead.email],
+    ["Pickup", lead.pickup], ["Drop-off", lead.dropoff],
+    ["Service", lead.service], ["Travel date", lead.travelDate],
+    ["Source page", lead.sourcePage],
+  ].filter(([, v]) => v);
+
+  const htmlContent = `
+<div style="font-family:sans-serif;max-width:520px">
+  <h2 style="color:#A07830">New Website Lead — Quote Request</h2>
+  <table cellpadding="6" style="border-collapse:collapse">
+    ${rows.map(([k, v]) => `<tr><td style="color:#666"><strong>${k}</strong></td><td>${v}</td></tr>`).join("")}
+  </table>
+  <p style="color:#999;font-size:12px">Respond fast — leads convert best within 5 minutes.</p>
+</div>`;
+
+  const textContent = rows.map(([k, v]) => `${k}: ${v}`).join("\n");
+
+  try {
+    const response = await fetch(BREVO_API_URL, {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json", "api-key": apiKey },
+      body: JSON.stringify({
+        sender:  { name: senderName, email: senderEmail },
+        to:      [{ email: notifyTo }],
+        ...(lead.email ? { replyTo: { email: lead.email } } : {}),
+        subject: `New lead: ${lead.pickup || "?"} → ${lead.dropoff || "?"}`,
+        htmlContent,
+        textContent,
+      }),
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      return { success: false, error: errData?.message || response.statusText };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Send failed" };
+  }
+}

@@ -1,11 +1,46 @@
 import { MetadataRoute } from "next";
-
-const SITE_URL = "https://chauffeur-platform-web.vercel.app";
+import { SITE_URL } from "@/lib/seo";
+import { SUBURBS, EXISTING_LOCATION_SLUGS } from "@/data/suburbs";
+import { ROUTES } from "@/data/routes";
+import { EVENTS } from "@/data/events";
+import { COST_GUIDES } from "@/data/costGuides";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
+  // ── Data-driven URL families (route matrix, suburbs, events, cost guides) ──
+  const generated: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/areas-served`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.85 },
+    { url: `${SITE_URL}/events`,       lastModified: now, changeFrequency: "weekly" as const, priority: 0.85 },
+    { url: `${SITE_URL}/reviews`,      lastModified: now, changeFrequency: "weekly" as const, priority: 0.80 },
+    ...ROUTES.map((r) => ({
+      url: `${SITE_URL}/routes/${r.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.84,
+    })),
+    ...SUBURBS.filter((s) => !EXISTING_LOCATION_SLUGS.has(s.slug)).map((s) => ({
+      url: `${SITE_URL}/locations/${s.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.78,
+    })),
+    ...EVENTS.map((e) => ({
+      url: `${SITE_URL}/events/${e.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.82,
+    })),
+    ...COST_GUIDES.map((g) => ({
+      url: `${SITE_URL}/cost/${g.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.80,
+    })),
+  ];
+
   return [
+    ...generated,
     // ── Core ──────────────────────────────────────────────────────
     { url: SITE_URL,                         lastModified: now, changeFrequency: "weekly",  priority: 1.0 },
     { url: `${SITE_URL}/book`,               lastModified: now, changeFrequency: "weekly",  priority: 0.95 },

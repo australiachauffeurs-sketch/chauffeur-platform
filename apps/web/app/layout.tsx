@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Analytics from "@/components/analytics/Analytics";
+import StickyCTA from "@/components/lead/StickyCTA";
+import { SITE_URL } from "@/lib/seo";
 
-const SITE_URL = "https://chauffeur-platform-web.vercel.app";
 const BUSINESS_NAME = "Elite Chauffeurs Australia";
 const PHONE = "+61 8 8000 0000";
 const PHONE_RAW = "+61880000000";
@@ -75,9 +77,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: SITE_URL,
   },
-  verification: {
-    google: "REPLACE_WITH_GOOGLE_SEARCH_CONSOLE_ID",
-  },
+  ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION } }
+    : {}),
   category: "transportation",
 };
 
@@ -189,7 +191,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <StickyCTA />
+        <Analytics />
+      </body>
     </html>
   );
 }
