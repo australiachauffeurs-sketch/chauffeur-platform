@@ -36,6 +36,7 @@ export default function DashboardPage() {
     load();
 
     // Supabase Realtime subscription
+    (async () => {
     try {
       const url  = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const key  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -56,6 +57,7 @@ export default function DashboardPage() {
     } catch {
       // Realtime unavailable — page still works via manual refresh
     }
+    })();
 
     return () => {
       if (channelRef.current) {
@@ -132,8 +134,8 @@ export default function DashboardPage() {
           const daily: { date: string; amount: number }[] = data?.dailyRevenue || [];
           const maxVal = Math.max(...daily.map(d => d.amount), 1);
           const labels = daily.length === 30
-            ? [daily[0].date, daily[14].date, daily[29].date].map(d =>
-                new Date(d).toLocaleDateString("en-AU", { day: "numeric", month: "short" }))
+            ? ([daily[0]?.date, daily[14]?.date, daily[29]?.date] as string[]).map(d =>
+                d ? new Date(d).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—")
             : ["—", "—", "—"];
           return (
             <>
