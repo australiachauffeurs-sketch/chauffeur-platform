@@ -45,6 +45,7 @@ export default function BookingsPage() {
   const [filter,    setFilter]    = useState("all");
   const [search,    setSearch]    = useState("");
   const [loading,   setLoading]   = useState(true);
+  const [apiError,  setApiError]  = useState("");
   const [liveConn,  setLiveConn]  = useState(false);
   const [drivers,   setDrivers]   = useState<any[]>([]);
   const channelRef = useRef<any>(null);
@@ -58,13 +59,19 @@ export default function BookingsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setApiError("");
     try {
       const params = new URLSearchParams({ status: filter, search, limit: "50" });
       const res    = await fetch(`/api/admin/bookings?${params}`);
       const data   = await res.json();
+      if (!res.ok || data.error) {
+        setApiError(data.error || `API error ${res.status}`);
+      }
       setBookings(data.bookings || []);
       setTotal(data.total || 0);
-    } catch {}
+    } catch (e: any) {
+      setApiError(e?.message || "Network error");
+    }
     finally { setLoading(false); }
   }, [filter, search]);
 
@@ -145,6 +152,13 @@ export default function BookingsPage() {
         </div>
         <button onClick={() => { setForm({ ...EMPTY_FORM }); setFormError(""); setShowNew(true); }} className="btn-gold text-sm">+ New Booking</button>
       </div>
+
+      {/* API error banner */}
+      {apiError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <strong>Error loading bookings:</strong> {apiError}
+        </div>
+      )}
 
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-3">

@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
-  const { createClient } = require("@supabase/supabase-js");
   return createClient(url, key);
 }
 
 export async function GET(req: NextRequest) {
   const supabase = getSupabase();
   if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
+    console.error("[Admin bookings] Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    return NextResponse.json({ error: "Supabase not configured — check environment variables", bookings: [], total: 0 }, { status: 500 });
   }
 
   const { searchParams } = new URL(req.url);
