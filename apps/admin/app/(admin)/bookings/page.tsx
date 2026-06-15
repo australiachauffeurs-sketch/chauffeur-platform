@@ -97,9 +97,10 @@ export default function BookingsPage() {
       body: JSON.stringify({ bookingId, paymentMethod:"cash" }),
     });
     load();
+    if (viewing?.id === bookingId) setViewing((v:any) => ({ ...v, payment_status:"paid" }));
   };
 
-  const updateStatus = async (bookingId: string, status: string, driver_id?: string) => {
+  const updateStatus = async (bookingId: string, status: string, driver_id?: string | null) => {
     const body: any = { bookingId, status };
     if (driver_id !== undefined) body.driver_id = driver_id;
     await fetch("/api/admin/booking/status", {
@@ -180,7 +181,7 @@ export default function BookingsPage() {
                 <tr><td colSpan={10} className="px-4 py-12 text-center text-[#B0A898]">No bookings found</td></tr>
               ) : bookings.map(b => (
                 <tr key={b.id} className="hover:bg-[#FAF8F4] transition-colors">
-                  <td className="px-4 py-3.5 font-mono text-[#B0A898] text-xs">{String(b.id).slice(0,8)}…</td>
+                  <td className="px-4 py-3.5 font-mono text-[#B0A898] text-xs">{String(b.id).slice(0,8).toUpperCase()}…</td>
                   <td className="px-4 py-3.5 text-[#1C1611] font-medium whitespace-nowrap">{b.customer}</td>
                   <td className="px-4 py-3.5">
                     <p className="text-[#7A6F62] text-xs truncate max-w-[120px]">{b.pickup}</p>
@@ -283,7 +284,7 @@ export default function BookingsPage() {
 
       {/* View / Manage booking modal */}
       {viewing && (
-        <Modal title={`Booking — ${String(viewing.id).slice(0,8)}…`} onClose={() => setViewing(null)} wide>
+        <Modal title={`Booking — ${String(viewing.id).slice(0,8).toUpperCase()}…`} onClose={() => setViewing(null)} wide>
           <div className="space-y-5">
             {/* Status row */}
             <div className="flex items-center justify-between">
@@ -321,8 +322,8 @@ export default function BookingsPage() {
                     {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                   <button onClick={() => {
-                    const sel = document.getElementById("drv-sel") as HTMLSelectElement;
-                    updateStatus(viewing.id, sel.value ? "confirmed" : viewing.status, sel.value || null);
+                    const drvSel = document.getElementById("drv-sel") as HTMLSelectElement;
+                    updateStatus(viewing.id, drvSel.value ? "driver_assigned" : viewing.status, drvSel.value || null);
                   }} className="btn-gold text-xs px-4">Assign</button>
                 </div>
               </div>
