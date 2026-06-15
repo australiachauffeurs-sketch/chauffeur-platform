@@ -69,11 +69,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Pickup and dropoff are required." }, { status: 400 });
     }
 
-    // Extract customer_id from session cookie
+    // Extract customer_id from session cookie (web) or Bearer token (mobile)
     let customerId: string | null = null;
     const ecUserCookie = req.cookies.get("ec_user")?.value;
     if (ecUserCookie) {
       try { customerId = JSON.parse(ecUserCookie).id ?? null; } catch {}
+    }
+    if (!customerId) {
+      const authHeader = req.headers.get("authorization");
+      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      if (token) {
+        try {
+          const { createClient: createAnonClient } = await import("@supabase/supabase-js");
+          const anonClient = createAnonClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!
+          );
+          const { data: { user } } = await anonClient.auth.getUser(token);
+          customerId = user?.id ?? null;
+        } catch {}
+      }
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

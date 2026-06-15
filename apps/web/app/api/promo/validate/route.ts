@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !key?.startsWith("eyJ")) {
+  if (!url || (!key?.startsWith("eyJ") && !key?.startsWith("sb_secret_"))) {
     // Demo mode — accept DEMO10 as a test code
     if (code.toUpperCase() === "DEMO10") {
       return NextResponse.json({ valid: true, discount: { type: "percent", value: 10, amount: (bookingAmount || 100) * 0.1, code: "DEMO10", description: "Demo 10% discount" } });

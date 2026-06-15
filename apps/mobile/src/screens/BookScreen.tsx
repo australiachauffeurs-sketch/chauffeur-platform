@@ -1,5 +1,5 @@
-"use client";
 import React, { useState } from "react";
+import { supabase } from "../lib/supabase";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, SafeAreaView, ActivityIndicator, Alert,
@@ -264,8 +264,13 @@ export default function BookScreen({ route, navigation }: any) {
         ? (promoApplied ? Math.max(0, pricing.total - promoApplied.amount) : pricing.total)
         : quotes[vehicle] || 0;
 
+      // Get auth token so server can link booking to the logged-in customer
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) authHeaders["Authorization"] = `Bearer ${session.access_token}`;
+
       const res = await fetch(`${API_BASE}/api/booking/create`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: authHeaders,
         body: JSON.stringify({
           pickup, dropoff,
           bookingType:      service,
