@@ -41,7 +41,7 @@ export default function DashboardPage() {
       const key  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       if (!url || !key) return;
 
-      const { createClient } = require("@supabase/supabase-js");
+      const { createClient } = await import("@supabase/supabase-js");
       const supabase = createClient(url, key);
 
       const channel = supabase
@@ -119,18 +119,45 @@ export default function DashboardPage() {
             <p className="text-[#B0A898] text-xs mt-0.5">Last 30 days</p>
           </div>
           <span className="text-[#C9A84C] text-sm font-semibold">
-            ${(data?.revenue||48320).toLocaleString()} AUD
+            ${(data?.revenue || 0).toLocaleString()} AUD
           </span>
         </div>
-        <div className="flex items-end gap-1.5 h-32">
-          {[65,80,55,90,70,85,95,60,75,88,72,91,84,68,76,89,93,71,82,78,86,94,67,79,88,92,73,85,96,88].map((h, i) => (
-            <div key={i} className="flex-1 rounded-t transition-all duration-300 hover:opacity-80"
-              style={{ height:`${h}%`, background: h > 85 ? "linear-gradient(180deg,#C9A84C,#A07830)" : "#E8E0D0" }} />
-          ))}
-        </div>
-        <div className="flex justify-between text-[#B0A898] text-xs mt-2">
-          <span>1 Jun</span><span>15 Jun</span><span>30 Jun</span>
-        </div>
+        {loading ? (
+          <div className="flex items-end gap-1.5 h-32">
+            {Array(30).fill(0).map((_, i) => (
+              <div key={i} className="flex-1 rounded-t bg-[#E8E0D0] animate-pulse" style={{ height: `${30 + Math.random() * 50}%` }} />
+            ))}
+          </div>
+        ) : (() => {
+          const daily: { date: string; amount: number }[] = data?.dailyRevenue || [];
+          const maxVal = Math.max(...daily.map(d => d.amount), 1);
+          const labels = daily.length === 30
+            ? [daily[0].date, daily[14].date, daily[29].date].map(d =>
+                new Date(d).toLocaleDateString("en-AU", { day: "numeric", month: "short" }))
+            : ["—", "—", "—"];
+          return (
+            <>
+              <div className="flex items-end gap-1.5 h-32">
+                {daily.map((d, i) => {
+                  const pct = Math.max((d.amount / maxVal) * 100, 2);
+                  return (
+                    <div key={i} className="flex-1 rounded-t transition-all duration-300 hover:opacity-80 group relative"
+                      style={{ height: `${pct}%`, background: d.amount > 0 ? "linear-gradient(180deg,#C9A84C,#A07830)" : "#E8E0D0" }}>
+                      {d.amount > 0 && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-[#1C1611] text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap z-10">
+                          ${d.amount.toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between text-[#B0A898] text-xs mt-2">
+                <span>{labels[0]}</span><span>{labels[1]}</span><span>{labels[2]}</span>
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       {/* Recent bookings */}
