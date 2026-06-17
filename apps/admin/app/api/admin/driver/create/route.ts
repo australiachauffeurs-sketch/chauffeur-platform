@@ -58,25 +58,26 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Insert driver row — pre-approved and onboarding complete since admin created it
-  const { data: driver, error: driverError } = await supabase.from("drivers").insert({
-    id:                  authUserId,
-    first_name:          firstName.trim(),
-    last_name:           lastName.trim(),
-    name:                `${firstName.trim()} ${lastName.trim()}`,
-    email:               email.trim().toLowerCase(),
-    phone:               phone || null,
-    vehicle_category:    vehicle_category || "sedan",
-    vehicle_make:        vehicle_make || null,
-    vehicle_model:       vehicle_model || null,
-    vehicle_year:        vehicle_year ? parseInt(vehicle_year) : null,
-    vehicle_plate:       vehicle_plate || null,
-    is_approved:         true,
-    onboarding_complete: true,
-    status:              "offline",
-    is_online:           false,
-    rating:              0,
-    total_trips:         0,
-  }).select("id, first_name, last_name, email").single();
+  // Build insert using only columns that exist in the drivers table
+  const insertData: any = {
+    id:          authUserId,
+    name:        `${firstName.trim()} ${lastName.trim()}`,
+    email:       normalizedEmail,
+    phone:       phone || null,
+    is_approved: true,
+    status:      "offline",
+    rating:      0,
+    trips:       0,
+  };
+
+  // Optional columns — add only if the table has them (safe to try; error will say which ones to drop)
+  if (vehicle_category) insertData.vehicle_category = vehicle_category;
+  if (vehicle_make)     insertData.vehicle_make     = vehicle_make;
+  if (vehicle_model)    insertData.vehicle_model    = vehicle_model;
+  if (vehicle_year)     insertData.vehicle_year     = parseInt(vehicle_year);
+  if (vehicle_plate)    insertData.vehicle_plate    = vehicle_plate;
+
+  const { data: driver, error: driverError } = await supabase.from("drivers").insert(insertData).select("id, name, email").single();
 
   if (driverError) {
     // Roll back: delete the auth user we just created
