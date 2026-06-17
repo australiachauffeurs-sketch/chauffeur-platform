@@ -7,6 +7,7 @@ const STATUS_STYLE: Record<string,string> = {
   offline:   "bg-[#F5F1EB] text-[#B0A898] border border-[#E8E0D0]",
 };
 const VEHICLE_TYPES = ["sedan","suv","luxury","van","stretch_limo","minibus"];
+const EMPTY_CREATE = { firstName:"", lastName:"", email:"", password:"", phone:"", city:"", vehicle_category:"sedan", vehicle_make:"", vehicle_model:"", vehicle_year:"", vehicle_plate:"" };
 const VEH_LABEL: Record<string,string> = { sedan:"Sedan", suv:"SUV", luxury:"Luxury Sedan", van:"Van / People Mover", stretch_limo:"Limousine", minibus:"Minibus" };
 
 function Modal({ title, onClose, children, wide=false }: { title:string; onClose:()=>void; children:React.ReactNode; wide?:boolean }) {
@@ -51,10 +52,11 @@ export default function DriversPage() {
   const [viewing,      setViewing]      = useState<any|null>(null);
   const [editExpiry,   setEditExpiry]   = useState(false);
 
-  const [inviteForm, setInviteForm] = useState({ name:"", email:"", phone:"", city:"", vehicle_type:"sedan" });
-  const [inviting,   setInviting]   = useState(false);
-  const [inviteErr,  setInviteErr]  = useState("");
-  const [inviteOk,   setInviteOk]   = useState(false);
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE);
+  const [creating,   setCreating]   = useState(false);
+  const [createErr,  setCreateErr]  = useState("");
+  const [createdDriver, setCreatedDriver] = useState<any>(null);
+  const [showPass,   setShowPass]   = useState(false);
 
   const [expiryFields, setExpiryFields] = useState<any>({});
   const [savingExpiry, setSavingExpiry] = useState(false);
@@ -94,19 +96,27 @@ export default function DriversPage() {
     finally { setCheckingDocs(false); }
   };
 
-  const handleInvite = async () => {
-    if (!inviteForm.name || !inviteForm.email) { setInviteErr("Name and email are required."); return; }
-    setInviting(true); setInviteErr("");
+  const handleCreate = async () => {
+    if (!createForm.firstName || !createForm.lastName || !createForm.email || !createForm.password) {
+      setCreateErr("First name, last name, email and password are required."); return;
+    }
+    if (createForm.password.length < 6) { setCreateErr("Password must be at least 6 characters."); return; }
+    setCreating(true); setCreateErr("");
     try {
-      const res  = await fetch("/api/admin/driver/invite", {
-        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(inviteForm),
+      const res  = await fetch("/api/admin/driver/create", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(createForm),
       });
       const data = await res.json();
-      if (!res.ok) { setInviteErr(data.error || "Failed to invite driver"); return; }
-      setInviteOk(true); load();
-      setTimeout(() => { setShowInvite(false); setInviteOk(false); setInviteForm({ name:"", email:"", phone:"", city:"", vehicle_type:"sedan" }); }, 2000);
-    } catch { setInviteErr("Network error"); }
-    finally { setInviting(false); }
+      if (!res.ok) { setCreateErr(data.error || "Failed to create driver account"); return; }
+      setCreatedDriver({ ...data.driver, password: createForm.password });
+      load();
+    } catch { setCreateErr("Network error"); }
+    finally { setCreating(false); }
+  };
+
+  const resetCreate = () => {
+    setShowInvite(false); setCreatedDriver(null); setCreateErr("");
+    setCreateForm(EMPTY_CREATE); setShowPass(false);
   };
 
   const handleSaveExpiry = async () => {
@@ -144,7 +154,7 @@ export default function DriversPage() {
           <button onClick={handleCheckDocuments} disabled={checkingDocs} className="border border-[#E8E0D0] text-[#7A6F62] hover:text-[#1C1611] hover:border-[#C9A84C]/40 rounded-xl px-4 py-2.5 text-sm transition-colors disabled:opacity-60">
             {checkingDocs ? "Checking…" : "Check Docs"}
           </button>
-          <button onClick={() => { setShowInvite(true); setInviteErr(""); setInviteOk(false); }} className="btn-gold text-sm">+ Invite Driver</button>
+          <button onClick={() => { setShowInvite(true); setCreateErr(""); setCreatedDriver(null); setCreateForm(EMPTY_CREATE); setShowPass(false); }} className="btn-gold text-sm">+ Create Driver Account</button>
         </div>
       </div>
 
@@ -241,47 +251,140 @@ export default function DriversPage() {
         </div>
       )}
 
-      {/* Invite Driver modal */}
+      {/* Create Driver Account modal */}
       {showInvite && (
-        <Modal title="Invite Driver" onClose={() => setShowInvite(false)}>
-          {inviteOk ? (
-            <div className="text-center py-8">
-              <p className="text-4xl mb-3">✅</p>
-              <p className="text-[#1C1611] font-semibold">Invite sent!</p>
-              <p className="text-[#B0A898] text-sm mt-1">An invite email has been sent to {inviteForm.email}</p>
+        <Modal title="Create Driver Account" onClose={resetCreate} wide>
+          {createdDriver ? (
+            /* ── Success screen — show credentials ── */
+            <div className="space-y-5">
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                </div>
+                <div>
+                  <p className="text-green-800 font-semibold text-sm">Driver account created successfully!</p>
+                  <p className="text-green-600 text-xs mt-0.5">Share the login credentials below with the driver.</p>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF8F4] border border-[#E8E0D0] rounded-xl p-5 space-y-4">
+                <p className="text-xs font-bold text-[#7A6F62] uppercase tracking-wider">Login Credentials</p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[#B0A898] text-xs mb-1">Driver Name</p>
+                    <p className="text-[#1C1611] font-semibold">{createdDriver.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-[#B0A898] text-xs mb-1">Email / Login ID</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[#1C1611] font-mono font-semibold flex-1">{createdDriver.email}</p>
+                      <button onClick={() => navigator.clipboard.writeText(createdDriver.email)}
+                        className="text-xs text-[#C9A84C] hover:underline">Copy</button>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[#B0A898] text-xs mb-1">Password</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[#1C1611] font-mono font-semibold flex-1 tracking-widest">
+                        {showPass ? createdDriver.password : "••••••••"}
+                      </p>
+                      <button onClick={() => setShowPass(s => !s)} className="text-xs text-[#C9A84C] hover:underline">
+                        {showPass ? "Hide" : "Show"}
+                      </button>
+                      <button onClick={() => navigator.clipboard.writeText(createdDriver.password)}
+                        className="text-xs text-[#C9A84C] hover:underline">Copy</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-amber-800 text-xs font-semibold mb-1">Important</p>
+                <p className="text-amber-700 text-xs leading-relaxed">
+                  Save these credentials now — the password cannot be retrieved later.
+                  The driver can log in to the <strong>Driver mobile app</strong> using their email and password.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={resetCreate} className="flex-1 btn-gold text-sm">Done</button>
+                <button onClick={() => { setCreatedDriver(null); setCreateForm(EMPTY_CREATE); setCreateErr(""); setShowPass(false); }}
+                  className="flex-1 border border-[#E8E0D0] text-[#7A6F62] rounded-xl py-2.5 text-sm hover:text-[#1C1611] transition-colors">
+                  Create Another
+                </button>
+              </div>
             </div>
           ) : (
+            /* ── Create form ── */
             <div className="space-y-4">
-              {inviteErr && <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{inviteErr}</p>}
-              <div className="grid grid-cols-1 gap-4">
+              {createErr && <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{createErr}</p>}
+
+              <p className="text-xs font-bold text-[#7A6F62] uppercase tracking-wider">Personal Details</p>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Full Name *</label>
-                  <input className={inp} placeholder="James Wilson" value={inviteForm.name} onChange={e=>setInviteForm(f=>({...f,name:e.target.value}))} />
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">First Name *</label>
+                  <input className={inp} placeholder="James" value={createForm.firstName} onChange={e=>setCreateForm(f=>({...f,firstName:e.target.value}))} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Email Address *</label>
-                  <input className={inp} type="email" placeholder="james@example.com" value={inviteForm.email} onChange={e=>setInviteForm(f=>({...f,email:e.target.value}))} />
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Last Name *</label>
+                  <input className={inp} placeholder="Wilson" value={createForm.lastName} onChange={e=>setCreateForm(f=>({...f,lastName:e.target.value}))} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Phone</label>
-                    <input className={inp} placeholder="+61 400 000 000" value={inviteForm.phone} onChange={e=>setInviteForm(f=>({...f,phone:e.target.value}))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">City</label>
-                    <input className={inp} placeholder="Brisbane" value={inviteForm.city} onChange={e=>setInviteForm(f=>({...f,city:e.target.value}))} />
-                  </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Phone</label>
+                  <input className={inp} placeholder="+61 400 000 000" value={createForm.phone} onChange={e=>setCreateForm(f=>({...f,phone:e.target.value}))} />
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">City</label>
+                  <input className={inp} placeholder="Sydney" value={createForm.city} onChange={e=>setCreateForm(f=>({...f,city:e.target.value}))} />
+                </div>
+              </div>
+
+              <p className="text-xs font-bold text-[#7A6F62] uppercase tracking-wider pt-2 border-t border-[#F0EBE2]">Login Credentials</p>
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Email Address (Login ID) *</label>
+                <input className={inp} type="email" placeholder="james.wilson@example.com" value={createForm.email} onChange={e=>setCreateForm(f=>({...f,email:e.target.value}))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Password *</label>
+                <div className="relative">
+                  <input className={inp} type={showPass ? "text" : "password"} placeholder="Minimum 6 characters" value={createForm.password} onChange={e=>setCreateForm(f=>({...f,password:e.target.value}))} />
+                  <button type="button" onClick={() => setShowPass(s => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#C9A84C] hover:underline">
+                    {showPass ? "Hide" : "Show"}
+                  </button>
+                </div>
+                <p className="text-[#B0A898] text-xs mt-1">Driver will use this email + password to log in to the mobile app.</p>
+              </div>
+
+              <p className="text-xs font-bold text-[#7A6F62] uppercase tracking-wider pt-2 border-t border-[#F0EBE2]">Vehicle Details</p>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Vehicle Type</label>
-                  <select className={sel} value={inviteForm.vehicle_type} onChange={e=>setInviteForm(f=>({...f,vehicle_type:e.target.value}))}>
+                  <select className={sel} value={createForm.vehicle_category} onChange={e=>setCreateForm(f=>({...f,vehicle_category:e.target.value}))}>
                     {VEHICLE_TYPES.map(v => <option key={v} value={v}>{VEH_LABEL[v]}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Plate Number</label>
+                  <input className={inp} placeholder="ABC 123" value={createForm.vehicle_plate} onChange={e=>setCreateForm(f=>({...f,vehicle_plate:e.target.value}))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Make</label>
+                  <input className={inp} placeholder="Mercedes-Benz" value={createForm.vehicle_make} onChange={e=>setCreateForm(f=>({...f,vehicle_make:e.target.value}))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Model</label>
+                  <input className={inp} placeholder="S-Class" value={createForm.vehicle_model} onChange={e=>setCreateForm(f=>({...f,vehicle_model:e.target.value}))} />
+                </div>
               </div>
+
               <div className="flex gap-3 pt-2">
-                <button onClick={()=>setShowInvite(false)} className="flex-1 border border-[#E8E0D0] text-[#7A6F62] rounded-xl py-2.5 text-sm hover:text-[#1C1611] transition-colors">Cancel</button>
-                <button onClick={handleInvite} disabled={inviting} className="flex-1 btn-gold text-sm disabled:opacity-60">{inviting?"Sending…":"Send Invite"}</button>
+                <button onClick={resetCreate} className="flex-1 border border-[#E8E0D0] text-[#7A6F62] rounded-xl py-2.5 text-sm hover:text-[#1C1611] transition-colors">Cancel</button>
+                <button onClick={handleCreate} disabled={creating} className="flex-1 btn-gold text-sm disabled:opacity-60">
+                  {creating ? "Creating Account…" : "Create Driver Account"}
+                </button>
               </div>
             </div>
           )}
