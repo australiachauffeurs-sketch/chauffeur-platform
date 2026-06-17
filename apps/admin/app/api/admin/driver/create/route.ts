@@ -65,7 +65,6 @@ export async function POST(req: NextRequest) {
     name:                `${firstName.trim()} ${lastName.trim()}`,
     email:               email.trim().toLowerCase(),
     phone:               phone || null,
-    city:                city || null,
     vehicle_category:    vehicle_category || "sedan",
     vehicle_make:        vehicle_make || null,
     vehicle_model:       vehicle_model || null,
