@@ -21,22 +21,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
   }
 
-  // 1. Create Supabase Auth user
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // 1. Try to create Supabase Auth user
+  let authUserId: string;
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: email.trim().toLowerCase(),
+    email: normalizedEmail,
     password,
     email_confirm: true,
     user_metadata: { firstName, lastName, role: "driver" },
   });
 
   if (authError) {
-    if (authError.message?.toLowerCase().includes("already registered") || authError.message?.toLowerCase().includes("already exists")) {
-      return NextResponse.json({ error: "A user with this email already exists." }, { status: 409 });
-    }
-    return NextResponse.json({ error: authError.message }, { status: 500 });
-  }
+    const msg = authError.message?.toLowerCase() ?? "";
+    if (msg.includes("already registered") || msg.includes("already exists")) {
+      // User exists in auth — look them up and reuse their ID with the new password
+      const { data: { users }, error: listErr } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      if (listErr) return NextResponse.json({ error: listErr.message }, { status: 500 });
+      const existing = users?.find((u: any) => u.email?.toLowerCase() === normalizedEmail);
+      if (!existing) return NextResponse.json({ error: "Email already in use." }, { status: 409 });
 
-  const authUserId = authData.user.id;
+      // Check if a driver row already exists for this user
+      const { data: existingDriver } = await supabase.from("drivers").select("id").eq("id", existing.id).maybeSingle();
+      if (existingDriver) {
+        return NextResponse.json({ error: "A driver account with this email already exists." }, { status: 409 });
+      }
+
+      // Update their password to the one admin set
+      await supabase.auth.admin.updateUserById(existing.id, { password });
+      authUserId = existing.id;
+    } else {
+      return NextResponse.json({ error: authError.message }, { status: 500 });
+    }
+  } else {
+    authUserId = authData.user.id;
+  }
 
   // 2. Insert driver row — pre-approved and onboarding complete since admin created it
   const { data: driver, error: driverError } = await supabase.from("drivers").insert({
