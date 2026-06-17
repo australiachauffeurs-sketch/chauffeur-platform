@@ -78,22 +78,28 @@ export default function BookingsPage() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    fetch("/api/admin/drivers?limit=100").then(r=>r.json()).then(d => setDrivers((d.drivers||[]).filter((x:any)=>x.approved))).catch(()=>{});
+    fetch("/api/admin/drivers?limit=100").then(r=>r.json()).then(d => setDrivers(d.drivers||[])).catch(()=>{});
   }, []);
 
   useEffect(() => {
-    try {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (!url || !key) return;
-      const { createClient } = require("@supabase/supabase-js");
-      const supabase = createClient(url, key);
-      const channel = supabase.channel("admin-bookings-rt")
-        .on("postgres_changes", { event:"*", schema:"public", table:"bookings" }, () => load())
-        .subscribe((s:string) => setLiveConn(s==="SUBSCRIBED"));
-      channelRef.current = channel;
-    } catch {}
-    return () => { try { channelRef.current?.unsubscribe(); } catch {} };
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabase = createClient(url, key);
+        const channel = supabase.channel("admin-bookings-rt")
+          .on("postgres_changes", { event:"*", schema:"public", table:"bookings" }, () => { if (mounted) load(); })
+          .subscribe((s: string) => { if (mounted) setLiveConn(s === "SUBSCRIBED"); });
+        channelRef.current = channel;
+      } catch {}
+    })();
+    return () => {
+      mounted = false;
+      try { channelRef.current?.unsubscribe(); } catch {}
+    };
   }, []); // eslint-disable-line
 
   const totalRevenue = bookings.filter(b => b.status !== "cancelled").reduce((s,b) => s+(b.amount||0), 0);
@@ -113,8 +119,17 @@ export default function BookingsPage() {
     await fetch("/api/admin/booking/status", {
       method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body),
     });
-    load();
-    if (viewing?.id === bookingId) setViewing((v:any) => ({ ...v, status, driver_id }));
+    await load();
+    // Refresh the viewing modal with updated data including driver name
+    if (viewing?.id === bookingId) {
+      const driverObj = driver_id ? drivers.find((d: any) => d.id === driver_id) : null;
+      setViewing((v: any) => ({
+        ...v,
+        status,
+        driver_id: driver_id ?? v.driver_id,
+        driver: driverObj ? driverObj.name : (driver_id === null ? null : v.driver),
+      }));
+    }
   };
 
   const handleCreate = async () => {
