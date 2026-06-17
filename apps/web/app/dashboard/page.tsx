@@ -132,9 +132,12 @@ export default function DashboardPage() {
     const upcoming  = bookings.filter(b => ["pending","confirmed","driver_assigned","en_route","arrived","in_progress"].includes(b.status));
     const completed = bookings.filter(b => b.status === "completed");
     const spent     = bookings.reduce((s, b) => s + (b.total_amount || b.amount || 0), 0);
-    const nextRide  = upcoming.sort((a, b) =>
-      new Date(a.scheduled_at || a.date).getTime() - new Date(b.scheduled_at || b.date).getTime()
-    )[0];
+    const now = Date.now();
+    const nextRide  = upcoming
+      .filter(b => new Date(b.scheduled_at || b.date).getTime() > now)
+      .sort((a, b) =>
+        new Date(a.scheduled_at || a.date).getTime() - new Date(b.scheduled_at || b.date).getTime()
+      )[0];
 
     return { total: bookings.length, upcoming: upcoming.length, completed: completed.length, spent, rating: 4.9, nextRide };
   }, [bookings]);
@@ -310,7 +313,7 @@ export default function DashboardPage() {
                 </span>
               </div>
 
-              <Link href={`/booking/${stats.nextRide.id}`}
+              <Link href={`/dashboard/bookings/${stats.nextRide.id}`}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 hover:gap-3.5 group/btn"
                 style={{ background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))", border: "1px solid rgba(201,168,76,0.3)", color: "#E8C97A" }}>
                 View Details & Track <span className="group-hover/btn:translate-x-1 transition-transform">→</span>
@@ -546,7 +549,7 @@ export default function DashboardPage() {
           ) : (
             <div className="divide-y divide-gray-50">
               {bookings.slice(0, 5).map((b: any, idx: number) => (
-                <Link key={b.id} href={`/booking/${b.id}`}
+                <Link key={b.id} href={`/dashboard/bookings/${b.id}`}
                   className="flex items-center gap-3 sm:gap-4 px-4 sm:px-7 py-4 sm:py-5 hover:bg-gradient-to-r hover:from-[#FFFDF7] hover:to-transparent transition-all group"
                   style={{ animationDelay: `${idx * 50}ms` }}>
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FFF9E6] to-[#FFEFBE] flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-sm">
