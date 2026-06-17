@@ -62,10 +62,10 @@ export default function BookingsPage() {
     try {
       const res  = await fetch("/api/booking/list");
       const data = await res.json();
-      if (data.demo || !data.bookings?.length) {
+      if (data.demo) {
         setBookings(DEMO_BOOKINGS);
       } else {
-        setBookings(data.bookings.map(mapBooking));
+        setBookings((data.bookings || []).map(mapBooking));
       }
     } catch {
       setBookings(DEMO_BOOKINGS);
