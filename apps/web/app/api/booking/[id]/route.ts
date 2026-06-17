@@ -58,7 +58,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { data, error } = await supabase
     .from("bookings")
-    .select("*, drivers(first_name, last_name, phone, rating, total_trips)")
+    .select("*")
     .eq("id", id)
     .single();
 
@@ -66,7 +66,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ booking: data });
+  // Fetch driver separately if assigned
+  let driver = null;
+  if (data.driver_id) {
+    const { data: driverData } = await supabase
+      .from("drivers")
+      .select("id, first_name, last_name, phone, rating, vehicle_category, vehicle_plate, vehicle_model")
+      .eq("id", data.driver_id)
+      .single();
+    driver = driverData ?? null;
+  }
+
+  return NextResponse.json({ booking: data, driver });
 }
 
 // PATCH — update booking status
