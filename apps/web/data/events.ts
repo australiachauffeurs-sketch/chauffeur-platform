@@ -239,6 +239,206 @@ export const EVENTS: EventEntry[] = [
   },
 ];
 
+  {
+    slug: "tour-down-under-transfers",
+    name: "Tour Down Under",
+    shortName: "Tour Down Under",
+    venue: "Adelaide CBD & regional SA stage cities",
+    startDate: "2027-01-17", endDate: "2027-01-25", season: "January each year",
+    description: "The world's best cyclists race through Adelaide's streets and into the hills each January. Whether you're watching the People's Choice Classic criterium or chasing the peloton to a mountain-top finish, we get you there before the road closures hit.",
+    tips: [
+      "City-centre closures on criterium day start midday — pre-arrange your pickup on a side street",
+      "Stage finishes in Paracombe, Willunga Hill and Uraidla fill country roads early — leave 2 hrs buffer",
+      "VIP village access at Flinders St is a 3-minute walk from our standard CBD drop zone",
+    ],
+    popularPickups: [
+      { from: "Adelaide Airport → CBD criterium precinct", price: "$89" },
+      { from: "CBD → Willunga Hill stage finish", price: "$168" },
+      { from: "CBD → Paracombe finish", price: "$128" },
+    ],
+    faqs: [
+      { q: "Can you get me to a Tour Down Under mountain finish?", a: "Yes — we run stage-finish transfers every year. Book early; Willunga Hill in particular books out within days of the route announcement." },
+      { q: "How do road closures affect chauffeur pickups during TDU?", a: "Our drivers study the daily closure map and use designated vehicle zones. We'll text you the exact corner when road conditions firm up on the day." },
+    ],
+  },
+  {
+    slug: "royal-adelaide-show-transfers",
+    name: "Royal Adelaide Show",
+    shortName: "Royal Show",
+    venue: "Adelaide Showground, Wayville",
+    startDate: "2026-08-29", endDate: "2026-09-06", season: "Late August – September",
+    description: "SA's biggest agricultural event fills the Wayville showground for nine days. With 500,000 visitors and limited parking, a chauffeur drop at Gate 1 or Gate 10 is the smoothest way in.",
+    tips: [
+      "Gates open from 9am — the 10–11am window is the busiest arrival spike",
+      "Book a timed return: the main exits grid up 30 minutes after the evening fireworks",
+      "Families with prams: sedans have the largest bootspace for strollers and bags of show bags",
+    ],
+    popularPickups: [
+      { from: "Adelaide Airport → Showground", price: "$85" },
+      { from: "Northern suburbs → Showground", price: "from $112" },
+      { from: "Showground → suburbs (evening return)", price: "from $78" },
+    ],
+    faqs: [
+      { q: "Where do chauffeurs drop off at the Adelaide Showground?", a: "Gate 1 on Leader Street and Gate 10 on Goodwood Road are our standard drops — both are steps from the main attractions and avoid the car park queues." },
+      { q: "Can you do a return pickup after the Show fireworks?", a: "Yes — book a timed return for 15 minutes after the fireworks finish. Your driver will be staged at the agreed gate." },
+    ],
+  },
+  {
+    slug: "adelaide-cabaret-festival-transfers",
+    name: "Adelaide Cabaret Festival",
+    shortName: "Cabaret Festival",
+    venue: "Adelaide Festival Centre, North Terrace",
+    startDate: "2027-06-06", endDate: "2027-06-20", season: "June (biennial)",
+    description: "The world's largest cabaret festival transforms the Adelaide Festival Centre for two weeks. An evening of cocktails and showstoppers deserves a driver who gets you home without the wait.",
+    tips: [
+      "Festival Centre is 90 seconds from our King William Road drop zone — no stairs, no searching",
+      "Late-night pick-ups (10:30pm–midnight) are peak cabaret season — confirm your return at booking",
+      "Combine with a pre-show dinner at Ukiyo or Shobosho in the East End for a seamless night",
+    ],
+    popularPickups: [
+      { from: "Adelaide Airport → Festival Centre", price: "$89" },
+      { from: "Glenelg → North Terrace", price: "$78" },
+      { from: "Hills suburbs → Festival Centre", price: "from $118" },
+    ],
+    faqs: [
+      { q: "Where is the best drop-off point for the Adelaide Festival Centre?", a: "King William Road outside Elder Park — 60 seconds from the main Festival Centre entrance, no pedestrian crossing needed." },
+      { q: "Is parking difficult at the Cabaret Festival?", a: "Yes — North Terrace car parks fill by 7pm on show nights and the after-show exit is slow. A pre-booked chauffeur is far less stressful." },
+    ],
+  },
+  {
+    slug: "barossa-vintage-festival-transfers",
+    name: "Barossa Vintage Festival",
+    shortName: "Barossa Vintage",
+    venue: "Tanunda, Nuriootpa & throughout the Barossa Valley",
+    startDate: "2027-04-11", endDate: "2027-04-17", season: "Easter week, odd-numbered years",
+    description: "Australia's oldest wine and culture festival celebrates harvest across seven Barossa days. Grape stomping, long lunches, winemaker dinners and open cellar doors — you should be drinking, not driving.",
+    tips: [
+      "Seppeltsfield Road long lunches are the festival's most popular event — book your transfer well ahead",
+      "Multi-stop cellar door days are best handled on hourly hire — your driver keeps the itinerary moving",
+      "Return transfers from Barossa accommodation to Adelaide Airport are our most common festival leg",
+    ],
+    popularPickups: [
+      { from: "Adelaide Airport → Barossa accommodation", price: "$192" },
+      { from: "CBD → Barossa (full-day hourly hire)", price: "from $480/day" },
+      { from: "Barossa cellar doors → Adelaide hotel", price: "$192" },
+    ],
+    faqs: [
+      { q: "Can you do a full-day Barossa Vintage Festival itinerary?", a: "Yes — hourly hire (from $125/hr, 4hr min) with your own driver for the day is our most popular Vintage Festival package. One driver, your whole cellar-door list." },
+      { q: "How long does it take to drive from Adelaide to the Barossa?", a: "About 55–70 minutes depending on your destination in the valley. We depart when you're ready, not on a bus timetable." },
+    ],
+  },
+  {
+    slug: "sea-and-vines-transfers",
+    name: "Sea & Vines Festival",
+    shortName: "Sea & Vines",
+    venue: "McLaren Vale wine region, Fleurieu Peninsula",
+    startDate: "2027-06-14", endDate: "2027-06-15", season: "Queen's Birthday long weekend, June",
+    description: "McLaren Vale's biggest outdoor food and wine weekend. Long tables under eucalypts, 50+ cellar doors open, and the d'Arenberg Cube overlooking it all — let us handle the Fleurieu Peninsula driving.",
+    tips: [
+      "The Old Clarendon Winery and Wirra Wirra are our most-requested long-lunch drop points",
+      "Book 3+ weeks out — June long weekend is one of our busiest weekends of the year",
+      "Combine Friday cellar doors + Saturday festival + Sunday brunch — we'll build the quote",
+    ],
+    popularPickups: [
+      { from: "Adelaide CBD → McLaren Vale (return)", price: "$152 each way" },
+      { from: "Airport → McLaren Vale accommodation", price: "$148" },
+      { from: "McLaren Vale (full-day hourly hire)", price: "from $420/day" },
+    ],
+    faqs: [
+      { q: "How do I get to McLaren Vale without driving?", a: "Pre-book a fixed-price chauffeur return from the CBD or airport. It's 45 minutes each way through some of SA's best scenery, and you won't need to worry about the drive home." },
+      { q: "Is a return transfer to McLaren Vale worth it?", a: "At $304 return for two people, a private chauffeur often costs less than parking + a taxi + lost time — and you can drink freely at every cellar door." },
+    ],
+  },
+  {
+    slug: "sala-festival-transfers",
+    name: "SALA Festival",
+    shortName: "SALA",
+    venue: "Venues across South Australia",
+    startDate: "2026-08-01", endDate: "2026-08-31", season: "August each year",
+    description: "South Australia's most inclusive art festival puts more than 700 exhibitions in pubs, cafés, galleries and pop-ups across the state all August. Let us take you on a curated gallery tour without the parking hunt.",
+    tips: [
+      "Hourly hire is ideal for multi-venue gallery hops — the driver waits while you browse",
+      "Regional SALA venues in Hahndorf, McLaren Vale and the Barossa pair naturally with cellar doors",
+      "Evening openings (Thursday–Friday) are popular — pre-book your return from the city",
+    ],
+    popularPickups: [
+      { from: "CBD galleries tour (hourly hire)", price: "from $125/hr" },
+      { from: "Airport → Adelaide city hotel", price: "$89" },
+      { from: "Hills SALA venues round trip", price: "from $148" },
+    ],
+    faqs: [
+      { q: "Can I book a chauffeur for a SALA gallery tour?", a: "Yes — our hourly hire is perfect for SALA. Tell us your gallery list and we build the most efficient route, wait between venues and bring you home when you're done." },
+      { q: "Are any SALA venues hard to reach without a car?", a: "Many of the most interesting SALA shows are in regional pubs, artist studios and rural properties not served by public transport. A chauffeur is often the only practical option." },
+    ],
+  },
+  {
+    slug: "superloop-adelaide-transfers",
+    name: "Superloop Adelaide International",
+    shortName: "Superloop Adelaide",
+    venue: "Memorial Drive, Adelaide",
+    startDate: "2027-01-07", endDate: "2027-01-11", season: "January each year",
+    description: "The ATP Tour's biggest event in the southern hemisphere draws the world's top tennis players to Memorial Drive. With North Adelaide traffic snarled around the complex, a chauffeur drop at Gate 4 beats the car park by 20 minutes.",
+    tips: [
+      "Morning sessions (from 10am) have lighter traffic — afternoon/evening sessions are the bottleneck",
+      "Gate 4 on Montefiore Road is the closest vehicle drop to centre court",
+      "Corporate boxes: we coordinate multi-vehicle arrivals to align with your hospitality schedule",
+    ],
+    popularPickups: [
+      { from: "Adelaide Airport → Memorial Drive", price: "$89" },
+      { from: "CBD hotels → tennis complex", price: "$58" },
+      { from: "Glenelg → Superloop", price: "$76" },
+    ],
+    faqs: [
+      { q: "Where do chauffeurs drop off at Memorial Drive for tennis?", a: "Montefiore Road (Gate 4) is the designated drop zone for private vehicles — steps from the main entrance and the corporate hospitality area." },
+      { q: "Can I book a chauffeur for the Superloop finals weekend?", a: "Yes, but book early — the semifinals and finals weekend is our busiest tennis window. We recommend booking the week the draw is announced." },
+    ],
+  },
+  {
+    slug: "christmas-lights-lobethal-transfers",
+    name: "Christmas Lights of Lobethal",
+    shortName: "Lights of Lobethal",
+    venue: "Lobethal, Adelaide Hills",
+    startDate: "2026-12-05", endDate: "2026-12-24", season: "December each year",
+    description: "South Australia's most-loved Christmas tradition turns the Adelaide Hills town of Lobethal into a sea of lights every December evening. A chauffeur lets the whole family enjoy the spectacle without the carpark queue or the late-night drive home through the hills.",
+    tips: [
+      "Arrive between 9–10pm to catch peak illumination and avoid the worst of the car-park gridlock",
+      "Book your return for 45 minutes after arrival — Lobethal empties quickly once the walk is done",
+      "The run from Adelaide CBD takes 45–55 minutes through picturesque Hills roads",
+    ],
+    popularPickups: [
+      { from: "Adelaide CBD → Lobethal (return)", price: "$220 return" },
+      { from: "Northern suburbs → Lobethal", price: "from $185 return" },
+      { from: "Group van (up to 7)", price: "$310 return" },
+    ],
+    faqs: [
+      { q: "Is it worth getting a chauffeur to the Lights of Lobethal?", a: "For families and groups, absolutely. Parking chaos adds 30–60 minutes each way during peak December evenings. A chauffeur drops you at the start of the light walk and picks you up at the end." },
+      { q: "Can children ride in the chauffeur vehicles?", a: "Yes — child seats are available on request at no extra charge in sedans and SUVs. Please specify ages when booking." },
+    ],
+  },
+  {
+    slug: "feast-festival-transfers",
+    name: "Feast Festival",
+    shortName: "Feast",
+    venue: "Venues across Adelaide CBD & suburbs",
+    startDate: "2026-10-30", endDate: "2026-11-15", season: "November each year",
+    description: "South Australia's LGBTQ+ arts and culture festival fills two weeks with film, cabaret, parties and community events across Adelaide. Pre-booked fixed-price transfers take the planning stress out of a busy festival fortnight.",
+    tips: [
+      "Late-night returns from club nights and ticketed events should be pre-booked — demand peaks after midnight",
+      "The iconic Fair Day at Elder Park is easily reached from our King William Road drop zone",
+      "Groups of 4–7 save significantly using an executive van for a single invoice",
+    ],
+    popularPickups: [
+      { from: "Airport → CBD festival hotel", price: "$89" },
+      { from: "Suburbs → Elder Park Fair Day", price: "from $68" },
+      { from: "Late-night event returns", price: "fixed, booked ahead" },
+    ],
+    faqs: [
+      { q: "Can I book a chauffeur for late-night Feast Festival events?", a: "Yes — we operate 24/7 and our rates are fixed regardless of the hour. Pre-book your return when you book your outward journey and the price won't change." },
+      { q: "Do you service group bookings for Feast Festival?", a: "Absolutely — executive vans seat up to 7 and are popular with friend groups attending Feast events together. One invoice, one driver, no splitting fares on the night." },
+    ],
+  },
+];
+
 export function getEvent(slug: string): EventEntry | undefined {
   return EVENTS.find((e) => e.slug === slug);
 }

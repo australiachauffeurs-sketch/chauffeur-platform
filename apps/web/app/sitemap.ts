@@ -104,8 +104,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/venues/national-wine-centre`,         lastModified: now, changeFrequency: "monthly", priority: 0.78 },
 
     // ── Comparison pages ──────────────────────────────────────────
-    { url: `${SITE_URL}/compare/chauffeur-vs-uber-adelaide`,  lastModified: now, changeFrequency: "monthly", priority: 0.84 },
-    { url: `${SITE_URL}/compare/chauffeur-vs-taxi-adelaide`,  lastModified: now, changeFrequency: "monthly", priority: 0.82 },
+    { url: `${SITE_URL}/compare/chauffeur-vs-uber-adelaide`,         lastModified: now, changeFrequency: "monthly", priority: 0.84 },
+    { url: `${SITE_URL}/compare/chauffeur-vs-taxi-adelaide`,         lastModified: now, changeFrequency: "monthly", priority: 0.82 },
+    { url: `${SITE_URL}/compare/chauffeur-vs-limousine-adelaide`,    lastModified: now, changeFrequency: "monthly", priority: 0.81 },
+    { url: `${SITE_URL}/compare/best-chauffeur-companies-adelaide`,  lastModified: now, changeFrequency: "monthly", priority: 0.83 },
+    { url: `${SITE_URL}/compare/chauffeur-vs-shuttle-bus-adelaide`,  lastModified: now, changeFrequency: "monthly", priority: 0.80 },
 
     // ── Fleet ─────────────────────────────────────────────────────
     { url: `${SITE_URL}/fleet`,                    lastModified: now, changeFrequency: "monthly", priority: 0.82 },
@@ -114,13 +117,45 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/fleet/stretch-limousine`,  lastModified: now, changeFrequency: "monthly", priority: 0.78 },
     { url: `${SITE_URL}/fleet/executive-van`,      lastModified: now, changeFrequency: "monthly", priority: 0.78 },
 
+    // ── Corporate pages ───────────────────────────────────────────
+    { url: `${SITE_URL}/corporate/mining-resources`,     lastModified: now, changeFrequency: "monthly", priority: 0.86 },
+    { url: `${SITE_URL}/corporate/legal-firms`,          lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${SITE_URL}/corporate/medical-professional`, lastModified: now, changeFrequency: "monthly", priority: 0.84 },
+    { url: `${SITE_URL}/corporate/conference-transfers`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${SITE_URL}/corporate/roadshow-investor`,    lastModified: now, changeFrequency: "monthly", priority: 0.83 },
+    { url: `${SITE_URL}/corporate/fifo-transfers`,       lastModified: now, changeFrequency: "monthly", priority: 0.86 },
+
+    // ── Occasion pages ────────────────────────────────────────────
+    { url: `${SITE_URL}/occasions/hens-night`,             lastModified: now, changeFrequency: "monthly", priority: 0.82 },
+    { url: `${SITE_URL}/occasions/bucks-party`,            lastModified: now, changeFrequency: "monthly", priority: 0.82 },
+    { url: `${SITE_URL}/occasions/debutante-ball`,         lastModified: now, changeFrequency: "monthly", priority: 0.80 },
+    { url: `${SITE_URL}/occasions/winery-day-tour`,        lastModified: now, changeFrequency: "monthly", priority: 0.84 },
+    { url: `${SITE_URL}/occasions/golf-transfers`,         lastModified: now, changeFrequency: "monthly", priority: 0.80 },
+    { url: `${SITE_URL}/occasions/airport-cruise-transfer`,lastModified: now, changeFrequency: "monthly", priority: 0.82 },
+
+    // ── Airport & transfer services ───────────────────────────────
+    { url: `${SITE_URL}/services/airport-meet-greet`,            lastModified: now, changeFrequency: "monthly", priority: 0.92 },
+    { url: `${SITE_URL}/services/late-night-airport-transfers`,  lastModified: now, changeFrequency: "monthly", priority: 0.88 },
+    { url: `${SITE_URL}/services/point-to-point`,                lastModified: now, changeFrequency: "monthly", priority: 0.86 },
+
+    // ── Cost guides ───────────────────────────────────────────────
+    { url: `${SITE_URL}/cost/airport-transfer-cost-adelaide`,  lastModified: now, changeFrequency: "monthly", priority: 0.88 },
+    { url: `${SITE_URL}/cost/chauffeur-hourly-rate-adelaide`,  lastModified: now, changeFrequency: "monthly", priority: 0.86 },
+
+    // ── Sitemap page ──────────────────────────────────────────────
+    { url: `${SITE_URL}/sitemap-page`, lastModified: now, changeFrequency: "monthly", priority: 0.50 },
+
     // ── Blog ──────────────────────────────────────────────────────
-    { url: `${SITE_URL}/blog`,                                                     lastModified: now, changeFrequency: "weekly",  priority: 0.72 },
-    { url: `${SITE_URL}/blog/adelaide-airport-guide-2026`,                         lastModified: now, changeFrequency: "monthly", priority: 0.78 },
-    { url: `${SITE_URL}/blog/barossa-vs-mclaren-vale-day-trip`,                    lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${SITE_URL}/blog/how-much-does-a-chauffeur-cost-adelaide`,             lastModified: now, changeFrequency: "monthly", priority: 0.76 },
-    { url: `${SITE_URL}/blog/corporate-travel-policy-adelaide`,                    lastModified: now, changeFrequency: "monthly", priority: 0.73 },
-    { url: `${SITE_URL}/blog/adelaide-school-formal-transport-guide`,              lastModified: now, changeFrequency: "monthly", priority: 0.73 },
-    { url: `${SITE_URL}/blog/best-wedding-venues-adelaide-hills`,                  lastModified: now, changeFrequency: "monthly", priority: 0.73 },
+    { url: `${SITE_URL}/blog`,                                              lastModified: now, changeFrequency: "weekly",  priority: 0.72 },
+    { url: `${SITE_URL}/blog/adelaide-airport-guide-2026`,                  lastModified: now, changeFrequency: "monthly", priority: 0.78 },
+    { url: `${SITE_URL}/blog/barossa-vs-mclaren-vale-day-trip`,             lastModified: now, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${SITE_URL}/blog/how-much-does-a-chauffeur-cost-adelaide`,      lastModified: now, changeFrequency: "monthly", priority: 0.76 },
+    { url: `${SITE_URL}/blog/corporate-travel-policy-adelaide`,             lastModified: now, changeFrequency: "monthly", priority: 0.73 },
+    { url: `${SITE_URL}/blog/adelaide-school-formal-transport-guide`,       lastModified: now, changeFrequency: "monthly", priority: 0.73 },
+    { url: `${SITE_URL}/blog/best-wedding-venues-adelaide-hills`,           lastModified: now, changeFrequency: "monthly", priority: 0.73 },
+    { url: `${SITE_URL}/blog/adelaide-to-barossa-valley-guide`,             lastModified: now, changeFrequency: "monthly", priority: 0.76 },
+    { url: `${SITE_URL}/blog/corporate-chauffeur-vs-taxi-expense`,          lastModified: now, changeFrequency: "monthly", priority: 0.74 },
+    { url: `${SITE_URL}/blog/adelaide-wedding-transport-guide`,             lastModified: now, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${SITE_URL}/blog/hen-party-adelaide-winery-guide`,              lastModified: now, changeFrequency: "monthly", priority: 0.74 },
   ];
 }
