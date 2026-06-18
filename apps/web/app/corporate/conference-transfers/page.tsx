@@ -189,6 +189,19 @@ export default function ConferenceTransfersPage() {
             </a>
           </div>
         </section>
+      {/* Related pages */}
+        <section style={{ background: "#0d0d10", padding: "48px 24px", borderTop: "1px solid #1f1f28" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <p style={{ color: "#C9A84C", fontWeight: 700, letterSpacing: "0.15em", fontSize: 11, textTransform: "uppercase", marginBottom: 20 }}>Related Pages</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              <Link href="/corporate/mining-resources" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Mining & Resources Chauffeur →</Link>
+              <Link href="/corporate/roadshow-investor" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Roadshow & Investor Transfers →</Link>
+              <Link href="/services/airport-meet-greet" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Airport Meet & Greet →</Link>
+              <Link href="/venues/adelaide-convention-centre" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Adelaide Convention Centre →</Link>
+              <Link href="/corporate/legal-firms" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Legal Firms Chauffeur →</Link>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </>

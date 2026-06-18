@@ -204,6 +204,20 @@ export default function AirportMeetGreetPage() {
         </Link>
       </section>
 
+      {/* Related pages */}
+      <section style={{ background: "#0d0d10", padding: "48px 24px", borderTop: "1px solid #1f1f28" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <p style={{ color: "#C9A84C", fontWeight: 700, letterSpacing: "0.15em", fontSize: 11, textTransform: "uppercase", marginBottom: 20 }}>Related Pages</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <Link href="/services/airport-transfers" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Airport Transfers →</Link>
+            <Link href="/services/late-night-airport-transfers" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Late Night Airport Transfers →</Link>
+            <Link href="/services/point-to-point" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Point-to-Point Transfers →</Link>
+            <Link href="/locations/adelaide-airport" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Adelaide Airport Chauffeur →</Link>
+            <Link href="/cost/airport-transfer-cost-adelaide" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Airport Transfer Cost Guide →</Link>
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </>
   );

@@ -270,6 +270,19 @@ export default function BarossaGuide() {
             </Link>
           </section>
         </div>
+      {/* Related pages */}
+      <section style={{ background: "#0d0d10", padding: "48px 24px", borderTop: "1px solid #1f1f28" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <p style={{ color: "#C9A84C", fontWeight: 700, letterSpacing: "0.15em", fontSize: 11, textTransform: "uppercase", marginBottom: 20 }}>Related Pages</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <Link href="/locations/barossa-valley" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Barossa Valley Transfers →</Link>
+            <Link href="/locations/tanunda" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Tanunda Chauffeur →</Link>
+            <Link href="/locations/nuriootpa" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Nuriootpa Chauffeur →</Link>
+            <Link href="/events/barossa-vintage-festival-transfers" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Barossa Vintage Festival Transfers →</Link>
+            <Link href="/occasions/winery-day-tour" style={{ background: "#17171A", border: "1px solid #2A2A30", color: "#9CA3AF", padding: "8px 16px", borderRadius: 8, fontSize: 13, textDecoration: "none" }}>Winery Day Tour Chauffeur →</Link>
+          </div>
+        </div>
+      </section>
       </main>
       <Footer />
     </>
