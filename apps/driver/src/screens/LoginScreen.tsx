@@ -8,9 +8,6 @@ import { useTheme } from "../lib/ThemeContext";
 import { supabase } from "../lib/supabase";
 import { setDriver } from "../lib/driver";
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_CONFIGURED = !!SUPABASE_URL && !SUPABASE_URL.includes("your-project");
-
 export default function LoginScreen({ navigation }: any) {
   const { colors, isDark } = useTheme();
   const [email,    setEmail]    = useState("");
@@ -22,18 +19,7 @@ export default function LoginScreen({ navigation }: any) {
     if (!e || !password) { Alert.alert("Required", "Please enter email and password."); return; }
     setLoading(true);
     try {
-      // ── Demo mode (no Supabase configured) ─────────────────────────────
-      if (!SUPABASE_CONFIGURED) {
-        if (password.length >= 4) {
-          await setDriver({ id: "demo-driver", name: e.split("@")[0], email: e });
-          navigation.replace("Main");
-        } else {
-          Alert.alert("Login Failed", "Password must be at least 4 characters.");
-        }
-        return;
-      }
-
-      // ── Real auth — sign in with the persisted Supabase client ─────────
+      // ── Sign in with Supabase ──────────────────────────────────────────
       const { data: auth, error } = await supabase.auth.signInWithPassword({ email: e, password });
       if (error || !auth?.user) {
         Alert.alert("Login Failed", error?.message || "Incorrect email or password.");

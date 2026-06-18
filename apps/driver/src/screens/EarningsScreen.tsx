@@ -3,13 +3,14 @@ import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Act
 import { useTheme } from "../lib/ThemeContext";
 import { getDriver } from "../lib/driver";
 
-const API = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+const API = process.env.EXPO_PUBLIC_API_URL!;
 
 export default function EarningsScreen({ navigation }: any) {
   const { colors, isDark } = useTheme();
   const [stats, setStats] = useState<any>(null);
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [period, setPeriod] = useState<"today" | "week" | "month" | "all">("week");
   const [driverId, setDriverId] = useState<string | null>(null);
 
@@ -20,11 +21,9 @@ export default function EarningsScreen({ navigation }: any) {
     setLoading(true);
     fetch(`${API}/api/driver/earnings?driverId=${driverId}&period=${period}`)
       .then(r => r.json())
-      .then(data => { setStats(data.stats); setTrips(data.trips || []); setLoading(false); })
+      .then(data => { setFetchError(false); setStats(data.stats); setTrips(data.trips || []); setLoading(false); })
       .catch(() => {
-        // On error, show zeroed state rather than fake earnings
-        setStats({ total: 0, tripCount: 0, avgPerTrip: 0, longestKm: 0 });
-        setTrips([]);
+        setFetchError(true);
         setLoading(false);
       });
   }, [period, driverId]);
@@ -52,7 +51,15 @@ export default function EarningsScreen({ navigation }: any) {
           ))}
         </View>
 
-        {loading ? <ActivityIndicator color={colors.gold} style={{ marginTop: 40 }} /> : (
+        {loading ? <ActivityIndicator color={colors.gold} style={{ marginTop: 40 }} /> : fetchError ? (
+          <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 20 }}>
+            <Text style={{ fontSize: 32, marginBottom: 12 }}>⚠️</Text>
+            <Text style={{ color: colors.white, fontSize: 17, fontWeight: "700", marginBottom: 8, textAlign: "center" }}>Could Not Load Earnings</Text>
+            <Text style={{ color: colors.gray500, fontSize: 14, textAlign: "center", lineHeight: 20 }}>
+              Unable to connect to the server. Please check your internet connection and try again.
+            </Text>
+          </View>
+        ) : (
           <>
             {/* Stats cards */}
             <View style={[styles.bigCard, { backgroundColor: colors.darkSurface, borderColor: `${colors.gold}30` }]}>

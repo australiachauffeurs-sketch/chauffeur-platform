@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { useTheme } from "../lib/ThemeContext";
 
-const API = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+const API = process.env.EXPO_PUBLIC_API_URL!;
 
 const VEHICLE_CATEGORIES = [
   "Executive Sedan",
@@ -82,8 +82,7 @@ export default function OnboardingScreen({ navigation, route }: OnboardingProps)
         Alert.alert("Error", data.error || "Failed to submit. Please try again.");
       }
     } catch {
-      // Demo mode: proceed anyway
-      setStep(4);
+      Alert.alert("Connection Error", "Could not submit your details. Please check your internet connection and try again.");
     } finally {
       setSubmitting(false);
     }

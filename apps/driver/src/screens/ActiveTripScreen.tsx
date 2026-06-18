@@ -7,7 +7,7 @@ import * as Location from "expo-location";
 import { COLORS, SHADOWS } from "../lib/theme";
 import { useTheme } from "../lib/ThemeContext";
 
-const API = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+const API = process.env.EXPO_PUBLIC_API_URL!;
 
 // Map local trip status → booking status in DB
 const STATUS_TO_DB: Record<string, string> = {

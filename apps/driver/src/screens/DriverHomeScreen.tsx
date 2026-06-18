@@ -8,7 +8,7 @@ import { useTheme } from "../lib/ThemeContext";
 import { supabase } from "../lib/supabase";
 import { getDriver, DriverProfile } from "../lib/driver";
 
-const API = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+const API = process.env.EXPO_PUBLIC_API_URL!;
 
 // Normalize either a raw bookings row or an already-normalized job into one shape
 const mapBookingToJob = (b: any) => ({
@@ -166,7 +166,7 @@ export default function DriverHomeScreen({ navigation }: any) {
         body: JSON.stringify({ bookingId: job.id, driverId }),
       });
       const data = await res.json();
-      if (data.success || data.demo) {
+      if (data.success) {
         setJobs(prev => prev.filter(j => j.id !== job.id));
         navigation.navigate("ActiveTrip", { job: claimedJob });
       } else {
