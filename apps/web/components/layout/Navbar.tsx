@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -20,70 +20,137 @@ function EliteLogo({ scrolled }: { scrolled: boolean }) {
           <stop offset="100%" stopColor="#C9A84C" />
         </linearGradient>
       </defs>
-
-      {/* ── Crest emblem ── */}
-      {/* outer diamond frame */}
       <path d="M26 4 L42 19 L26 48 L10 19 Z" fill="none" stroke="url(#lg1)" strokeWidth="1.2" />
-      {/* inner thin diamond */}
       <path d="M26 10 L37 21 L26 42 L15 21 Z" fill="none" stroke="url(#lg2)" strokeWidth="0.6" strokeOpacity="0.6" />
-      {/* top ornament */}
       <path d="M26 4 L23 8 L26 7 L29 8 Z" fill="url(#lg1)" />
-      {/* bottom ornament */}
       <path d="M26 48 L23 44 L26 45 L29 44 Z" fill="url(#lg1)" />
-      {/* side dots */}
       <circle cx="10" cy="19" r="1.5" fill="url(#lg1)" />
       <circle cx="42" cy="19" r="1.5" fill="url(#lg1)" />
-      {/* decorative horizontal rule inside crest */}
       <line x1="16" y1="19" x2="36" y2="19" stroke="url(#lg1)" strokeWidth="0.5" strokeOpacity="0.4" />
-
-      {/* ── Large E monogram ── */}
       <text x="26" y="27" textAnchor="middle" dominantBaseline="middle"
         fontFamily="'Cormorant Garamond', 'Playfair Display', Georgia, serif"
-        fontSize="22" fontWeight="600" fill="url(#lg1)" letterSpacing="0">
-        E
-      </text>
-
-      {/* ── Wordmark ── */}
-      {/* ELITE */}
+        fontSize="22" fontWeight="600" fill="url(#lg1)" letterSpacing="0">E</text>
       <text x="54" y="22" fontFamily="'Cormorant Garamond', 'Playfair Display', Georgia, serif"
         fontSize="18" fontWeight="600" letterSpacing="2"
-        fill={scrolled ? "#1C1611" : "white"} className="transition-all duration-300">
-        ELITE
-      </text>
-
-      {/* thin gold rule between words */}
+        fill={scrolled ? "#1C1611" : "white"} className="transition-all duration-300">ELITE</text>
       <line x1="54" y1="27" x2="154" y2="27" stroke="url(#lg1)" strokeWidth="0.6" strokeOpacity="0.5" />
-
-      {/* CHAUFFEURS */}
       <text x="54" y="38" fontFamily="'Inter', sans-serif"
-        fontSize="8.5" fontWeight="400" letterSpacing="3.5"
-        fill="url(#lg1)">
-        CHAUFFEURS
-      </text>
+        fontSize="8.5" fontWeight="400" letterSpacing="3.5" fill="url(#lg1)">CHAUFFEURS</text>
     </svg>
   );
 }
 
-const NAV_LINKS = [
-  { label: "Services", href: "/#services"  },
-  { label: "Fleet",    href: "/#fleet"     },
-  { label: "About",    href: "/#about"     },
-  { label: "Contact",  href: "/#contact"   },
+/* ── Dropdown data ──────────────────────────────────────────────── */
+const SERVICES_LINKS = [
+  { label: "Airport Transfers",        href: "/services/airport-transfers" },
+  { label: "Airport Meet & Greet",     href: "/services/airport-meet-greet" },
+  { label: "Late Night Transfers",     href: "/services/late-night-airport-transfers" },
+  { label: "Point-to-Point",           href: "/services/point-to-point" },
+  { label: "Corporate Chauffeur",      href: "/services/corporate-chauffeur" },
+  { label: "Hourly Hire",              href: "/services/hourly-hire" },
+  { label: "Wedding Cars",             href: "/services/wedding-cars" },
+  { label: "Wine Tours",               href: "/services/wine-tours" },
+  { label: "School Formals",           href: "/services/school-formals" },
+  { label: "Long Distance",            href: "/services/long-distance" },
 ];
 
+const CORPORATE_LINKS = [
+  { label: "Mining & Resources",       href: "/corporate/mining-resources" },
+  { label: "Law Firms & Barristers",   href: "/corporate/legal-firms" },
+  { label: "Medical & Hospital",       href: "/corporate/medical-professional" },
+  { label: "Conference & Convention",  href: "/corporate/conference-transfers" },
+  { label: "Roadshow & Investor Day",  href: "/corporate/roadshow-investor" },
+  { label: "FIFO Transfers",           href: "/corporate/fifo-transfers" },
+  { label: "Corporate Accounts",       href: "/corporate-accounts" },
+];
+
+const OCCASIONS_LINKS = [
+  { label: "Hens Night",               href: "/occasions/hens-night" },
+  { label: "Bucks Party",              href: "/occasions/bucks-party" },
+  { label: "Debutante Ball",           href: "/occasions/debutante-ball" },
+  { label: "Private Winery Day Tour",  href: "/occasions/winery-day-tour" },
+  { label: "Golf Club Transfers",      href: "/occasions/golf-transfers" },
+  { label: "Cruise & Airport Combo",   href: "/occasions/airport-cruise-transfer" },
+  { label: "Special Events",           href: "/services/special-events" },
+];
+
+const LOCATIONS_LINKS = [
+  { label: "Adelaide Airport",         href: "/locations/adelaide-airport" },
+  { label: "Adelaide CBD",             href: "/locations/adelaide-cbd" },
+  { label: "Glenelg",                  href: "/locations/glenelg" },
+  { label: "Barossa Valley",           href: "/locations/barossa-valley" },
+  { label: "McLaren Vale",             href: "/locations/mclaren-vale" },
+  { label: "Adelaide Hills",           href: "/locations/hahndorf" },
+  { label: "Victor Harbor",            href: "/locations/victor-harbor" },
+  { label: "All Locations →",          href: "/areas-served" },
+];
+
+/* ── Dropdown component ─────────────────────────────────────────── */
+function NavDropdown({
+  label, links, scrolled,
+}: {
+  label: string;
+  links: { label: string; href: string }[];
+  scrolled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1 text-sm font-medium tracking-wide transition-colors duration-200 hover:text-[#C9A84C] ${
+          scrolled ? "text-[#7A6F62]" : "text-white/80"
+        }`}
+      >
+        {label}
+        <span style={{ fontSize: 10, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          background: "#fff", border: "1px solid #E8E0D0", borderRadius: 14,
+          boxShadow: "0 12px 40px rgba(0,0,0,0.12)", minWidth: 220, zIndex: 100, overflow: "hidden",
+        }}>
+          {links.map(link => (
+            <Link key={link.href} href={link.href}
+              onClick={() => setOpen(false)}
+              style={{ display: "block", padding: "10px 18px", color: "#7A6F62", fontSize: 13, fontWeight: 500, textDecoration: "none", borderBottom: "1px solid #F9F6F0", transition: "all 0.15s" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#FAF8F4"; (e.currentTarget as HTMLElement).style.color = "#C9A84C"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "#7A6F62"; }}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main Navbar ────────────────────────────────────────────────── */
 export default function Navbar() {
-  const [scrolled,     setScrolled]    = useState(false);
-  const [mobileOpen,   setMobileOpen]  = useState(false);
-  const [user,         setUser]        = useState<{ name: string; email: string } | null>(null);
-  const [dropdownOpen, setDropdown]    = useState(false);
+  const [scrolled,     setScrolled]   = useState(false);
+  const [mobileOpen,   setMobileOpen] = useState(false);
+  const [mobileSection,setMobileSection] = useState<string | null>(null);
+  const [user,         setUser]       = useState<{ name: string; email: string } | null>(null);
+  const [dropdownOpen, setDropdown]   = useState(false);
   const pathname = usePathname();
   const router   = useRouter();
 
   useEffect(() => {
     const stored = localStorage.getItem("ec_user");
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch { /* ignore */ }
-    }
+    if (stored) { try { setUser(JSON.parse(stored)); } catch { /* ignore */ } }
   }, [pathname]);
 
   useEffect(() => {
@@ -113,24 +180,28 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
 
           {/* Logo */}
-          <Link href="/" className="group flex items-center">
+          <Link href="/" className="group flex items-center flex-shrink-0">
             <EliteLogo scrolled={scrolled} />
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {NAV_LINKS.map(link => (
-              <Link key={link.label} href={link.href}
-                className={`transition-colors duration-200 text-sm font-medium tracking-wide hover:text-[#C9A84C] ${
-                  scrolled ? "text-[#7A6F62]" : "text-white/80"
-                }`}>
-                {link.label}
-              </Link>
-            ))}
+          <div className="hidden lg:flex items-center gap-6">
+            <NavDropdown label="Services"   links={SERVICES_LINKS}   scrolled={scrolled} />
+            <NavDropdown label="Corporate"  links={CORPORATE_LINKS}  scrolled={scrolled} />
+            <NavDropdown label="Occasions"  links={OCCASIONS_LINKS}  scrolled={scrolled} />
+            <NavDropdown label="Locations"  links={LOCATIONS_LINKS}  scrolled={scrolled} />
+            <Link href="/events"
+              className={`text-sm font-medium tracking-wide transition-colors duration-200 hover:text-[#C9A84C] ${scrolled ? "text-[#7A6F62]" : "text-white/80"}`}>
+              Events
+            </Link>
+            <Link href="/blog"
+              className={`text-sm font-medium tracking-wide transition-colors duration-200 hover:text-[#C9A84C] ${scrolled ? "text-[#7A6F62]" : "text-white/80"}`}>
+              Blog
+            </Link>
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             {user ? (
               <div className="relative">
                 <button
@@ -181,20 +252,14 @@ export default function Navbar() {
               </div>
             ) : (
               <>
-                <Link href="/auth/login"
-                  className="btn-outline-gold text-sm py-2 px-5">
-                  Sign In
-                </Link>
-                <Link href="/book"
-                  className="btn-gold text-sm py-2 px-5">
-                  Book Now
-                </Link>
+                <Link href="/auth/login" className="btn-outline-gold text-sm py-2 px-5">Sign In</Link>
+                <Link href="/book" className="btn-gold text-sm py-2 px-5">Book Now</Link>
               </>
             )}
           </div>
 
           {/* Mobile hamburger */}
-          <button className="md:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+          <button className="lg:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
             <div className="w-6 flex flex-col gap-1.5">
               <span className={`block h-0.5 bg-[#C9A84C] transition-all duration-300 ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
               <span className={`block h-0.5 bg-[#C9A84C] transition-all duration-300 ${mobileOpen ? "opacity-0" : ""}`} />
@@ -206,26 +271,54 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-white border-t border-[#E8E0D0] shadow-lg">
-          <div className="px-4 py-6 flex flex-col gap-3">
-            {NAV_LINKS.map(link => (
-              <Link key={link.label} href={link.href} onClick={() => setMobileOpen(false)}
-                className="text-[#7A6F62] hover:text-[#C9A84C] py-2 border-b border-[#F0EBE2] text-sm font-medium">
-                {link.label}
-              </Link>
+        <div className="lg:hidden bg-white border-t border-[#E8E0D0] shadow-lg max-h-[80vh] overflow-y-auto">
+          <div className="px-4 py-4 flex flex-col gap-1">
+
+            {/* Accordion sections */}
+            {[
+              { key: "services",   label: "Services",   links: SERVICES_LINKS },
+              { key: "corporate",  label: "Corporate",  links: CORPORATE_LINKS },
+              { key: "occasions",  label: "Occasions",  links: OCCASIONS_LINKS },
+              { key: "locations",  label: "Locations",  links: LOCATIONS_LINKS },
+            ].map(section => (
+              <div key={section.key}>
+                <button
+                  onClick={() => setMobileSection(mobileSection === section.key ? null : section.key)}
+                  className="w-full flex justify-between items-center py-3 border-b border-[#F0EBE2] text-sm font-semibold text-[#7A6F62]"
+                >
+                  {section.label}
+                  <span style={{ fontSize: 10, transition: "transform 0.2s", transform: mobileSection === section.key ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+                </button>
+                {mobileSection === section.key && (
+                  <div className="pl-4 py-2 flex flex-col gap-1">
+                    {section.links.map(link => (
+                      <Link key={link.href} href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        className="py-2 text-sm text-[#9CA3AF] hover:text-[#C9A84C]">
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
 
-            <div className="flex flex-col gap-3 mt-2">
+            <Link href="/events" onClick={() => setMobileOpen(false)}
+              className="py-3 border-b border-[#F0EBE2] text-sm font-semibold text-[#7A6F62] hover:text-[#C9A84C]">
+              Events
+            </Link>
+            <Link href="/blog" onClick={() => setMobileOpen(false)}
+              className="py-3 border-b border-[#F0EBE2] text-sm font-semibold text-[#7A6F62] hover:text-[#C9A84C]">
+              Blog
+            </Link>
+
+            <div className="flex flex-col gap-3 mt-3 pt-2">
               {user ? (
                 <>
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)}
-                    className="btn-gold text-sm w-full text-center py-3">
-                    Go to Dashboard
-                  </Link>
+                    className="btn-gold text-sm w-full text-center py-3">Go to Dashboard</Link>
                   <button onClick={handleSignOut}
-                    className="text-sm text-red-500 border border-red-200 rounded-xl py-2.5 text-center w-full">
-                    Sign Out
-                  </button>
+                    className="text-sm text-red-500 border border-red-200 rounded-xl py-2.5 text-center w-full">Sign Out</button>
                 </>
               ) : (
                 <>

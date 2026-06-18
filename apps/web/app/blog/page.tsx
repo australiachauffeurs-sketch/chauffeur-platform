@@ -19,7 +19,38 @@ const POSTS = [
     category: "Airport Guide",
     readTime: "8 min read",
     date: "June 2026",
-    keywords: "Adelaide Airport guide, ADL arrivals, Adelaide Airport transport",
+  },
+  {
+    slug: "adelaide-to-barossa-valley-guide",
+    title: "Adelaide to Barossa Valley: Complete Visitor Guide 2026",
+    excerpt: "Drive time, best wineries, what to see, when to go and why a private chauffeur changes the entire experience. Everything you need for a perfect Barossa day trip.",
+    category: "Wine Regions",
+    readTime: "9 min read",
+    date: "June 2026",
+  },
+  {
+    slug: "hen-party-adelaide-winery-guide",
+    title: "The Ultimate Adelaide Hens Party Winery Tour Guide",
+    excerpt: "McLaren Vale vs Barossa vs Adelaide Hills — the best wineries for groups, top lunch spots, what to book and how to plan a hens day the bride will never forget.",
+    category: "Occasions",
+    readTime: "10 min read",
+    date: "June 2026",
+  },
+  {
+    slug: "adelaide-wedding-transport-guide",
+    title: "Adelaide Wedding Transport Guide 2026 — Chauffeur, Limo or Vintage Car?",
+    excerpt: "Timing, vehicle types, photography stops, Hills winery receptions and how to co-ordinate guest transfers without stress. The complete wedding transport playbook.",
+    category: "Weddings",
+    readTime: "11 min read",
+    date: "June 2026",
+  },
+  {
+    slug: "corporate-chauffeur-vs-taxi-expense",
+    title: "Why Adelaide Businesses Use Chauffeurs Instead of Taxis (The Numbers)",
+    excerpt: "Tax deductibility, corporate invoicing, time value of travel and productivity on the road. The honest financial case for switching from taxis to a chauffeur account.",
+    category: "Corporate",
+    readTime: "8 min read",
+    date: "June 2026",
   },
   {
     slug: "barossa-vs-mclaren-vale-day-trip",
@@ -28,7 +59,6 @@ const POSTS = [
     category: "Wine Regions",
     readTime: "10 min read",
     date: "May 2026",
-    keywords: "Barossa Valley day trip, McLaren Vale from Adelaide, Adelaide wine tour",
   },
   {
     slug: "how-much-does-a-chauffeur-cost-adelaide",
@@ -37,7 +67,6 @@ const POSTS = [
     category: "Pricing Guide",
     readTime: "7 min read",
     date: "May 2026",
-    keywords: "chauffeur cost Adelaide, how much chauffeur Adelaide, luxury car hire price",
   },
   {
     slug: "corporate-travel-policy-adelaide",
@@ -46,7 +75,6 @@ const POSTS = [
     category: "Corporate",
     readTime: "12 min read",
     date: "April 2026",
-    keywords: "corporate travel policy Adelaide, business transport policy SA",
   },
   {
     slug: "adelaide-school-formal-transport-guide",
@@ -55,7 +83,6 @@ const POSTS = [
     category: "School Formals",
     readTime: "9 min read",
     date: "March 2026",
-    keywords: "school formal transport Adelaide, formal limo hire Adelaide, Year 12 formal car SA",
   },
   {
     slug: "best-wedding-venues-adelaide-hills",
@@ -64,7 +91,6 @@ const POSTS = [
     category: "Weddings",
     readTime: "11 min read",
     date: "February 2026",
-    keywords: "Adelaide Hills wedding venues, wedding transport Adelaide Hills, chauffeur wedding Adelaide",
   },
 ];
 
