@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     ok: true,
     driver: {
       id:       driver.id,
-      name:     `${driver.first_name} ${driver.last_name}`,
+      name:     driver.name,
       email:    driver.email,
     },
   });
