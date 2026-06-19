@@ -97,8 +97,8 @@ export default function DriversPage() {
   };
 
   const handleCreate = async () => {
-    if (!createForm.firstName || !createForm.lastName || !createForm.email || !createForm.password) {
-      setCreateErr("First name, last name, email and password are required."); return;
+    if (!createForm.firstName || !createForm.lastName || !createForm.email || !createForm.password || !createForm.phone) {
+      setCreateErr("First name, last name, phone, email and password are required."); return;
     }
     if (createForm.password.length < 6) { setCreateErr("Password must be at least 6 characters."); return; }
     setCreating(true); setCreateErr("");
@@ -332,7 +332,7 @@ export default function DriversPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Phone</label>
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Phone *</label>
                   <input className={inp} placeholder="+61 400 000 000" value={createForm.phone} onChange={e=>setCreateForm(f=>({...f,phone:e.target.value}))} />
                 </div>
                 <div>
