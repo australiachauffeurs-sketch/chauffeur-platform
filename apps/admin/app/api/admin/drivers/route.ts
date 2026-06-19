@@ -13,15 +13,15 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("drivers")
-    .select("id, name, email, phone, vehicle_category, vehicle_plate, vehicle_model, vehicle_type, status, is_approved, rating")
-    .order("name", { ascending: true })
+    .select("id, first_name, last_name, email, phone, vehicle_category, vehicle_plate, vehicle_model, vehicle_type, status, is_approved, rating")
+    .order("first_name", { ascending: true })
     .limit(limit);
 
   if (error) return NextResponse.json({ error: error.message, drivers: [] }, { status: 500 });
 
   let drivers = (data || []).map((d: any) => ({
     id:       d.id,
-    name:     d.name || "",
+    name:     [d.first_name, d.last_name].filter(Boolean).join(" ") || "",
     email:    d.email,
     phone:    d.phone,
     vehicle:  d.vehicle_category || d.vehicle_type,

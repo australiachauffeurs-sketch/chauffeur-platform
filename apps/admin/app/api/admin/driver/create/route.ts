@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
   // Build insert using only columns that exist in the drivers table
   const insertData: any = {
     id:          authUserId,
-    name:        `${firstName.trim()} ${lastName.trim()}`,
+    first_name:  firstName.trim(),
+    last_name:   lastName.trim(),
     email:       normalizedEmail,
     phone:       phone || null,
     is_approved: true,
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
   if (vehicle_year)     insertData.vehicle_year     = parseInt(vehicle_year);
   if (vehicle_plate)    insertData.vehicle_plate    = vehicle_plate;
 
-  const { data: driver, error: driverError } = await supabase.from("drivers").insert(insertData).select("id, name, email").single();
+  const { data: driver, error: driverError } = await supabase.from("drivers").insert(insertData).select("id, first_name, last_name, email").single();
 
   if (driverError) {
     // Roll back: delete the auth user we just created
@@ -88,9 +89,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     driver: {
-      id:       driver.id,
-      name:     driver.name,
-      email:    driver.email,
+      id:    driver.id,
+      name:  [driver.first_name, driver.last_name].filter(Boolean).join(" "),
+      email: driver.email,
     },
   });
 }

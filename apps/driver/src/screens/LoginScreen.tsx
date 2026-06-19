@@ -29,13 +29,14 @@ export default function LoginScreen({ navigation }: any) {
       // Load the driver profile (onboarding + approval gating)
       const { data: d } = await supabase
         .from("drivers")
-        .select("id, is_approved, onboarding_complete, name, phone, vehicle_make, vehicle_model, vehicle_year, vehicle_plate, vehicle_category")
+        .select("id, is_approved, onboarding_complete, first_name, last_name, phone, vehicle_make, vehicle_model, vehicle_year, vehicle_plate, vehicle_category")
         .eq("email", e)
         .maybeSingle();
 
       if (d) {
+        const driverName = [d.first_name, d.last_name].filter(Boolean).join(" ") || e.split("@")[0];
         if (!d.onboarding_complete) {
-          navigation.replace("Onboarding", { driverId: d.id, name: d.name, email: e, phone: d.phone || "" });
+          navigation.replace("Onboarding", { driverId: d.id, name: driverName, email: e, phone: d.phone || "" });
           return;
         }
         if (!d.is_approved) {
@@ -48,7 +49,7 @@ export default function LoginScreen({ navigation }: any) {
         }
         await setDriver({
           id: d.id,
-          name: d.name || e.split("@")[0],
+          name: driverName,
           email: e,
           phone: d.phone,
           vehicleMakeModel: [d.vehicle_make, d.vehicle_model].filter(Boolean).join(" ") || null,
