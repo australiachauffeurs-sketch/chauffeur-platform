@@ -164,35 +164,80 @@ export default function DashboardPage() {
 
       {/* Recent bookings */}
       <div className="bg-white border border-[#E8E0D0] rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-[#F0EBE2]">
-          <h2 className="text-[#1C1611] font-semibold">Recent Bookings</h2>
-          <Link href="/bookings" className="text-[#C9A84C] text-xs font-medium hover:underline">View all →</Link>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#F0EBE2]">
+          <div>
+            <h2 className="text-[#1C1611] font-bold text-base">Recent Bookings</h2>
+            <p className="text-[#B0A898] text-xs mt-0.5">Latest activity across all customers</p>
+          </div>
+          <Link href="/bookings" className="text-xs font-semibold text-[#C9A84C] border border-[#C9A84C]/40 px-3 py-1.5 rounded-lg hover:bg-[#FFF8EC] transition-all">View all →</Link>
         </div>
         {loading ? (
           <div className="divide-y divide-[#F0EBE2]">
             {Array(4).fill(0).map((_, i) => (
-              <div key={i} className="px-5 py-4 flex items-center gap-4">
-                <Skel w="16" h={3} /><div className="flex-1 space-y-2"><Skel h={3} /><Skel w="32" h={2} /></div>
-                <Skel w="16" h={5} />
+              <div key={i} className="px-6 py-4 flex items-center gap-4">
+                <div className="w-9 h-9 rounded-xl bg-[#E8E0D0] animate-pulse flex-shrink-0" />
+                <div className="flex-1 space-y-2"><Skel h={3} /><Skel w="40" h={2} /></div>
+                <Skel w="16" h={6} />
               </div>
             ))}
           </div>
+        ) : (data?.recentBookings || []).length === 0 ? (
+          <div className="px-6 py-12 text-center text-[#B0A898] text-sm">No bookings yet</div>
         ) : (
           <div className="divide-y divide-[#F0EBE2]">
-            {(data?.recentBookings || []).map((b: any) => (
-              <div key={b.id} className="table-row px-5 py-3.5 flex items-center gap-4 transition-colors duration-150">
-                <span className="font-mono text-xs text-[#B0A898] w-16 flex-shrink-0">{b.id}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[#1C1611] text-sm font-medium truncate">{b.customer}</p>
-                  <p className="text-[#B0A898] text-xs truncate">{b.route}</p>
-                </div>
-                <span className="text-[#7A6F62] text-xs hidden sm:block w-16 flex-shrink-0">{b.vehicle}</span>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${STATUS_BADGE[b.status]||""}`}>
-                  {b.status.replace("_"," ")}
-                </span>
-                <span className="text-[#1C1611] font-bold text-sm w-16 text-right flex-shrink-0">${b.amount}</span>
-              </div>
-            ))}
+            {(data?.recentBookings || []).map((b: any) => {
+              const statusColor: Record<string,string> = {
+                pending:"#FBBF24", confirmed:"#60A5FA", driver_assigned:"#A78BFA",
+                en_route:"#F97316", arrived:"#22C55E", in_progress:"#C9A84C",
+                completed:"#22C55E", cancelled:"#EF4444",
+              };
+              const color = statusColor[b.status] ?? "#94A3B8";
+              const [pickup, dropoff] = (b.route ?? "").split("→").map((s:string) => s.trim());
+              return (
+                <Link key={b.id} href={`/bookings/${b.id}`}
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-[#FAFAF8] transition-colors group">
+
+                  {/* Status dot icon */}
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${color}18`, border: `1.5px solid ${color}40` }}>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                  </div>
+
+                  {/* Route */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[#1C1611] text-sm font-semibold truncate">{b.customer || "Guest"}</span>
+                      <span className="font-mono text-[10px] text-[#C9C2B8] flex-shrink-0">#{String(b.id).slice(0,8).toUpperCase()}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-[#7A6F62]">
+                      <span className="truncate max-w-[140px]">{pickup || b.route || "—"}</span>
+                      {dropoff && <>
+                        <span className="text-[#D4CFC8] flex-shrink-0">→</span>
+                        <span className="truncate max-w-[140px]">{dropoff}</span>
+                      </>}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] capitalize text-[#B0A898]">{b.vehicle}</span>
+                    </div>
+                  </div>
+
+                  {/* Status badge */}
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 capitalize whitespace-nowrap"
+                    style={{ color, backgroundColor: `${color}15`, border: `1px solid ${color}30` }}>
+                    {b.status?.replace(/_/g," ")}
+                  </span>
+
+                  {/* Amount */}
+                  <div className="text-right flex-shrink-0 w-20">
+                    <span className="text-[#1C1611] font-bold text-sm">${Number(b.amount || 0).toFixed(2)}</span>
+                  </div>
+
+                  <svg className="w-4 h-4 text-[#D4CFC8] group-hover:text-[#C9A84C] transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
