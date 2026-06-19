@@ -332,12 +332,12 @@ export default function DriversPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Phone *</label>
-                  <input className={inp} placeholder="+61 400 000 000" value={createForm.phone} onChange={e=>setCreateForm(f=>({...f,phone:e.target.value}))} />
+                  <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">Phone <span className="text-red-500">*</span></label>
+                  <input className={inp + (!createForm.phone && createErr ? " border-red-400 ring-1 ring-red-300" : "")} placeholder="+61 400 000 000" value={createForm.phone} onChange={e=>setCreateForm(f=>({...f,phone:e.target.value}))} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#7A6F62] mb-1.5">City</label>
-                  <input className={inp} placeholder="Sydney" value={createForm.city} onChange={e=>setCreateForm(f=>({...f,city:e.target.value}))} />
+                  <input className={inp} placeholder="Adelaide" value={createForm.city} onChange={e=>setCreateForm(f=>({...f,city:e.target.value}))} />
                 </div>
               </div>
 
