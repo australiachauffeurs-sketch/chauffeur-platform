@@ -169,9 +169,7 @@ export async function GET(
           scheduled_at, vehicle_category, passengers, luggage, flight_number,
           distance_km, duration_minutes, base_charge, booking_fee,
           airport_surcharge, after_hours_surcharge, gst, total_amount,
-          stripe_payment_id, payment_method,
-          drivers(full_name),
-          profiles(full_name, email)
+          stripe_payment_id, payment_method, payment_status, customer_id, driver_id
         `)
         .eq("id", bookingId)
         .single();
@@ -180,12 +178,32 @@ export async function GET(
         return NextResponse.json({ error: "Booking not found." }, { status: 404 });
       }
 
-      booking = {
-        ...data,
-        driver_name:    (data as any).drivers?.full_name ?? null,
-        customer_name:  (data as any).profiles?.full_name ?? null,
-        customer_email: (data as any).profiles?.email ?? null,
-      };
+      // Fetch driver name separately using actual columns
+      let driver_name = null;
+      if ((data as any).driver_id) {
+        const { data: dr } = await supabase
+          .from("drivers")
+          .select("first_name, last_name")
+          .eq("id", (data as any).driver_id)
+          .maybeSingle();
+        if (dr) driver_name = [dr.first_name, dr.last_name].filter(Boolean).join(" ");
+      }
+
+      // Fetch customer name separately using actual columns
+      let customer_name = null, customer_email = null;
+      if ((data as any).customer_id) {
+        const { data: cu } = await supabase
+          .from("customers")
+          .select("first_name, last_name, email")
+          .eq("id", (data as any).customer_id)
+          .maybeSingle();
+        if (cu) {
+          customer_name  = [cu.first_name, cu.last_name].filter(Boolean).join(" ");
+          customer_email = cu.email;
+        }
+      }
+
+      booking = { ...data, driver_name, customer_name, customer_email };
     }
 
     const html = buildHTML(booking);
