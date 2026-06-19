@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, ScrollView,
   StyleSheet, SafeAreaView, StatusBar, Switch, Alert, ActivityIndicator,
 } from "react-native";
+import * as Location from "expo-location";
 import { COLORS } from "../lib/theme";
 import { useTheme } from "../lib/ThemeContext";
 import { supabase } from "../lib/supabase";
@@ -68,6 +69,31 @@ export default function DriverHomeScreen({ navigation }: any) {
     const unsub = navigation.addListener("focus", loadEarnings);
     return unsub;
   }, [navigation, loadEarnings]);
+
+  // Push GPS location to Supabase every 30s when online
+  useEffect(() => {
+    if (!isOnline || !driverId) return;
+
+    const pushLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        await supabase
+          .from("drivers")
+          .update({
+            current_lat:         loc.coords.latitude,
+            current_lng:         loc.coords.longitude,
+            location_updated_at: new Date().toISOString(),
+          })
+          .eq("id", driverId);
+      } catch { /* silently ignore — location is best-effort */ }
+    };
+
+    pushLocation(); // immediate first push
+    const interval = setInterval(pushLocation, 30000);
+    return () => clearInterval(interval);
+  }, [isOnline, driverId]);
 
   // Fetch pending jobs
   const fetchJobs = useCallback(async () => {
