@@ -237,8 +237,6 @@ export const EVENTS: EventEntry[] = [
       { q: "Can you handle a multi-venue festival itinerary?", a: "Absolutely — give us your event list and we'll build a single quote covering every leg, including regional venues." },
     ],
   },
-];
-
   {
     slug: "tour-down-under-transfers",
     name: "Tour Down Under",
