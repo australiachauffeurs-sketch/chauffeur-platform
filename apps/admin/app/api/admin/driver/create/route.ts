@@ -66,12 +66,8 @@ export async function POST(req: NextRequest) {
     email:       normalizedEmail,
     phone:       phone || null,
     is_approved: true,
-    status:      "offline",
-    rating:      0,
-    trips:       0,
   };
 
-  // Optional columns — add only if the table has them (safe to try; error will say which ones to drop)
   if (vehicle_category) insertData.vehicle_category = vehicle_category;
   if (vehicle_make)     insertData.vehicle_make     = vehicle_make;
   if (vehicle_model)    insertData.vehicle_model    = vehicle_model;

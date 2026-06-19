@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("drivers")
-    .select("id, first_name, last_name, email, phone, vehicle_category, vehicle_plate, vehicle_model, vehicle_type, status, is_approved, rating")
+    .select("id, first_name, last_name, email, phone, vehicle_category, vehicle_plate, vehicle_model, status, is_approved")
     .order("first_name", { ascending: true })
     .limit(limit);
 
@@ -24,12 +24,11 @@ export async function GET(req: NextRequest) {
     name:     [d.first_name, d.last_name].filter(Boolean).join(" ") || "",
     email:    d.email,
     phone:    d.phone,
-    vehicle:  d.vehicle_category || d.vehicle_type,
+    vehicle:  d.vehicle_category,
     plate:    d.vehicle_plate,
     model:    d.vehicle_model,
     status:   d.status,
     approved: d.is_approved,
-    rating:   d.rating,
     online:   d.status === "online",
   }));
 
