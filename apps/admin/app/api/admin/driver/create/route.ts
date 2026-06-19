@@ -13,16 +13,14 @@ export async function POST(req: NextRequest) {
     vehicle_category, vehicle_make, vehicle_model, vehicle_year, vehicle_plate,
   } = await req.json();
 
-  // Validate required fields
   if (!firstName || !lastName || !email || !password || !phone) {
-    return NextResponse.json({ error: "First name, last name, email, phone and password are required." }, { status: 400 });
+    return NextResponse.json({ error: "First name, last name, phone, email and password are required." }, { status: 400 });
   }
   if (password.length < 6) {
     return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const normalizedPhone = phone.trim();
 
   // 1. Create Supabase Auth user
   let authUserId: string;
@@ -55,22 +53,26 @@ export async function POST(req: NextRequest) {
     authUserId = authData.user.id;
   }
 
-  // 2. Insert driver row — only guaranteed columns
+  // 2. Insert driver row with correct column names from actual DB schema
   const insertData: any = {
-    id:          authUserId,
-    first_name:  firstName.trim(),
-    last_name:   lastName.trim(),
-    email:       normalizedEmail,
-    phone:       normalizedPhone,
-    is_approved: true,
+    id:                  authUserId,
+    user_id:             authUserId,
+    first_name:          firstName.trim(),
+    last_name:           lastName.trim(),
+    email:               normalizedEmail,
+    phone:               phone.trim(),
+    is_approved:         true,
+    status:              "offline",
+    rating:              0,
+    total_trips:         0,
+    onboarding_complete: true,
   };
 
-  // Vehicle fields — only include if provided
   if (vehicle_category) insertData.vehicle_category = vehicle_category;
   if (vehicle_make)     insertData.vehicle_make     = vehicle_make.trim();
   if (vehicle_model)    insertData.vehicle_model    = vehicle_model.trim();
   if (vehicle_year)     insertData.vehicle_year     = parseInt(vehicle_year);
-  if (vehicle_plate)    insertData.vehicle_plate    = vehicle_plate.trim();
+  if (vehicle_plate)    insertData.vehicle_plate    = vehicle_plate.trim().toUpperCase();
 
   const { data: driver, error: driverError } = await supabase
     .from("drivers")

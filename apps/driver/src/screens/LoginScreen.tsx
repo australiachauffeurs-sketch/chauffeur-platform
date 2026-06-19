@@ -29,7 +29,7 @@ export default function LoginScreen({ navigation }: any) {
       // Load the driver profile (onboarding + approval gating)
       const { data: d } = await supabase
         .from("drivers")
-        .select("id, is_approved, onboarding_complete, first_name, last_name, phone, vehicle_make, vehicle_model, vehicle_year, vehicle_plate, vehicle_category")
+        .select("id, user_id, is_approved, onboarding_complete, first_name, last_name, phone, vehicle_make, vehicle_model, vehicle_year, vehicle_plate, vehicle_category, status, rating, total_trips")
         .eq("email", e)
         .maybeSingle();
 
