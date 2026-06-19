@@ -201,60 +201,63 @@ export default function BookingsPage() {
               <div className="w-12 h-12 rounded-xl bg-[#C9A84C]/10 flex items-center justify-center text-[#C9A84C] flex-shrink-0"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg></div>
 
               {/* Route info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="font-mono text-xs text-[#B0A898]">{b.id}</span>
-                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${STATUS_STYLE[b.status]}`}>
-                    {b.status.replace("_"," ")}
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <span className="font-mono text-xs text-[#B0A898] truncate max-w-[180px]">{b.id}</span>
+                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full flex-shrink-0 ${STATUS_STYLE[b.status] ?? "bg-gray-50 text-gray-600 border border-gray-200"}`}>
+                    {b.status.replace(/_/g," ")}
                   </span>
                   {b.isRecurring && (
-                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-200">
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-200 flex-shrink-0">
                       🔁 Recurring
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-[#1C1611] mb-1">
-                  <span className="text-green-500 text-xs">●</span>
-                  <span className="truncate">{b.pickup}</span>
-                  <span className="text-[#E8E0D0] flex-shrink-0">→</span>
-                  <span className="text-[#C9A84C] text-xs flex-shrink-0">●</span>
-                  <span className="truncate">{b.dropoff}</span>
+
+                {/* Route — stacked so long addresses never overflow */}
+                <div className="space-y-1 mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                    <span className="text-sm font-semibold text-[#1C1611] truncate">{b.pickup}</span>
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0 pl-0.5">
+                    <span className="w-0.5 h-3 bg-[#E8E0D0] ml-[3px] flex-shrink-0" />
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 rounded-full bg-[#C9A84C] flex-shrink-0" />
+                    <span className="text-sm font-semibold text-[#1C1611] truncate">{b.dropoff}</span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-3 text-xs text-[#B0A898]">
+
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#B0A898]">
                   <span>{b.date} · {b.time}</span>
-                  <span>{b.vehicle}</span>
+                  <span className="capitalize">{b.vehicle}</span>
                   <span>{b.pax} pax</span>
-                  <span>{b.km} km</span>
-                  {b.driver && <span>{b.driver}</span>}
+                  {b.km > 0 && <span>{b.km} km</span>}
+                  {b.driver && <span>· {b.driver}</span>}
                 </div>
               </div>
 
               {/* Amount + actions */}
-              <div className="flex sm:flex-col items-center sm:items-end gap-3 flex-shrink-0">
-                <span className="font-bold text-[#1C1611] text-lg">${b.amount.toFixed(2)}</span>
-                <div className="flex gap-2">
+              <div className="flex sm:flex-col items-center sm:items-end gap-3 flex-shrink-0 pt-1">
+                <span className="font-bold text-[#1C1611] text-lg whitespace-nowrap">${b.amount.toFixed(2)}</span>
+                <div className="flex flex-wrap gap-2 justify-end">
                   {["driver_assigned","en_route","arrived","in_progress"].includes(b.status) && (
                     <Link href={`/dashboard/bookings/${b.id}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-green-600 border border-green-300 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-500 hover:text-white hover:border-green-500 transition-all">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-green-600 border border-green-300 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-500 hover:text-white hover:border-green-500 transition-all whitespace-nowrap">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
                       Track Live
                     </Link>
                   )}
                   <Link href={`/dashboard/bookings/${b.id}`}
-                    className="text-xs font-semibold border border-[#C9A84C] text-[#C9A84C] px-3 py-1.5 rounded-lg hover:bg-[#C9A84C] hover:text-[#1C1611] transition-all">
+                    className="text-xs font-semibold border border-[#C9A84C] text-[#C9A84C] px-3 py-1.5 rounded-lg hover:bg-[#C9A84C] hover:text-[#1C1611] transition-all whitespace-nowrap">
                     View
                   </Link>
                   {b.status === "completed" && (
                     <Link href={`/book?rebook=${b.id}`}
-                      className="text-xs font-semibold bg-[#F5F1EB] text-[#7A6F62] px-3 py-1.5 rounded-lg hover:bg-[#E8E0D0] transition-all">
+                      className="text-xs font-semibold bg-[#F5F1EB] text-[#7A6F62] px-3 py-1.5 rounded-lg hover:bg-[#E8E0D0] transition-all whitespace-nowrap">
                       Rebook
                     </Link>
-                  )}
-                  {b.status === "completed" && (
-                    <a href={`/api/booking/${b.id}/receipt`} target="_blank" rel="noreferrer"
-                      className="text-xs font-semibold bg-[#FFF8EC] text-[#C9A84C] px-3 py-1.5 rounded-lg hover:bg-[#C9A84C] hover:text-[#1C1611] transition-all border border-[#C9A84C]/30">
-                      Receipt ↗
-                    </a>
                   )}
                 </div>
               </div>
