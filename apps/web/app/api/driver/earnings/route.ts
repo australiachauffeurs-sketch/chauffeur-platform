@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("bookings")
-    .select("id, pickup_address, total_amount, scheduled_at, completed_at, distance_km")
+    .select("id, pickup_address, dropoff_address, total_amount, scheduled_at, distance_km")
     .eq("driver_id", driverId)
     .eq("status", "completed")
     .order("scheduled_at", { ascending: false });

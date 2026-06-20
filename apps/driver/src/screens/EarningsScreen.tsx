@@ -89,7 +89,7 @@ export default function EarningsScreen({ navigation }: any) {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.tripPickup, { color: colors.white }]} numberOfLines={1}>{t.pickup_address}</Text>
                   <Text style={[styles.tripDate, { color: colors.gray500 }]}>
-                    {new Date(t.completed_at || t.scheduled_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                    {new Date(t.scheduled_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
                   </Text>
                 </View>
                 <Text style={[styles.tripAmount, { color: colors.gold }]}>${(t.total_amount || 0).toFixed(2)}</Text>

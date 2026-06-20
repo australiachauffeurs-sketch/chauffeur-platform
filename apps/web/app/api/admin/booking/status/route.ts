@@ -16,8 +16,7 @@ export async function PATCH(req: NextRequest) {
 
   const update: any = { status };
   if (driver_id !== undefined) update.driver_id = driver_id;
-  if (status === "completed") update.completed_at = new Date().toISOString();
-  if (status === "cancelled") update.cancelled_at = new Date().toISOString();
+  if (status === "completed") update.paid_at = new Date().toISOString();
 
   const { error } = await supabase.from("bookings").update(update).eq("id", bookingId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
