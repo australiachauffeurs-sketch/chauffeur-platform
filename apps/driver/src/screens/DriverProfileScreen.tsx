@@ -1,18 +1,53 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Switch, Alert, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Switch, Alert, Linking, ActivityIndicator } from "react-native";
 import { CommonActions } from "@react-navigation/native";
 import { COLORS } from "../lib/theme";
 import { useTheme } from "../lib/ThemeContext";
 import { supabase } from "../lib/supabase";
-import { getDriver, clearDriver, DriverProfile } from "../lib/driver";
+import { getDriver, setDriver as saveDriver, clearDriver, DriverProfile } from "../lib/driver";
+
+const API = process.env.EXPO_PUBLIC_API_URL!;
 
 export default function DriverProfileScreen({ navigation }: any) {
   const { colors, isDark, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [autoAccept, setAutoAccept]       = useState(false);
   const [driver, setDriver]               = useState<DriverProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  useEffect(() => { getDriver().then(setDriver); }, []);
+  useEffect(() => {
+    const loadProfile = async () => {
+      setLoadingProfile(true);
+      try {
+        // First load from cache for instant display
+        const cached = await getDriver();
+        if (cached) setDriver(cached);
+
+        // Then fetch fresh data from DB via API
+        if (cached?.id) {
+          const res = await fetch(`${API}/api/driver/profile?driverId=${cached.id}`);
+          if (res.ok) {
+            const { driver: fresh } = await res.json();
+            if (fresh) {
+              const updated: DriverProfile = {
+                ...cached,
+                rating:          fresh.rating ?? null,
+                totalTrips:      fresh.total_trips ?? null,
+                vehicleMakeModel: [fresh.vehicle_make, fresh.vehicle_model].filter(Boolean).join(" ") || null,
+                vehiclePlate:    fresh.vehicle_plate || null,
+                vehicleYear:     fresh.vehicle_year  || null,
+                vehicleCategory: fresh.vehicle_category || null,
+              };
+              setDriver(updated);
+              await saveDriver(updated); // update cache too
+            }
+          }
+        }
+      } catch { /* keep cached */ }
+      finally { setLoadingProfile(false); }
+    };
+    loadProfile();
+  }, []);
 
   const handleSignOut = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -29,10 +64,10 @@ export default function DriverProfileScreen({ navigation }: any) {
   };
 
   const vehicleRows: [string, string][] = [
-    ["Make & Model", driver?.vehicleMakeModel || "Not set"],
-    ["Plate Number", driver?.vehiclePlate || "Not set"],
-    ["Year",         driver?.vehicleYear || "—"],
-    ["Category",     driver?.vehicleCategory || "—"],
+    ["Make & Model", driver?.vehicleMakeModel || (loadingProfile ? "…" : "Not set")],
+    ["Plate Number", driver?.vehiclePlate     || (loadingProfile ? "…" : "Not set")],
+    ["Year",         driver?.vehicleYear      || (loadingProfile ? "…" : "—")],
+    ["Category",     driver?.vehicleCategory  || (loadingProfile ? "…" : "—")],
   ];
 
   const SETTINGS = [
@@ -67,8 +102,8 @@ export default function DriverProfileScreen({ navigation }: any) {
         {/* Stats */}
         <View style={styles.statsRow}>
           {[
-            { label: "Total Trips", value: driver?.totalTrips != null ? `${driver.totalTrips}` : "—" },
-            { label: "Rating",      value: driver?.rating ? `${driver.rating}★` : "New" },
+            { label: "Total Trips", value: loadingProfile ? "…" : driver?.totalTrips != null ? `${driver.totalTrips}` : "0" },
+            { label: "Rating",      value: loadingProfile ? "…" : (driver?.rating && driver.rating > 0) ? `${Number(driver.rating).toFixed(1)}★` : "New" },
             { label: "Status",      value: "Active" },
           ].map((s) => (
             <View key={s.label} style={[styles.statBox, { backgroundColor: colors.darkSurface, borderColor: colors.darkBorder }]}>
