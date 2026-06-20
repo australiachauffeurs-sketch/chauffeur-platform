@@ -75,7 +75,7 @@ export default function DriverHomeScreen({ navigation }: any) {
     return unsub;
   }, [navigation, loadEarnings, fetchAssignedJobs]);
 
-  // Push GPS location to Supabase every 30s when online
+  // Push GPS location via API every 30s when online (API uses service role, bypasses RLS)
   useEffect(() => {
     if (!isOnline || !driverId) return;
 
@@ -84,14 +84,18 @@ export default function DriverHomeScreen({ navigation }: any) {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") return;
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        await supabase
-          .from("drivers")
-          .update({
-            current_lat:         loc.coords.latitude,
-            current_lng:         loc.coords.longitude,
-            location_updated_at: new Date().toISOString(),
-          })
-          .eq("id", driverId);
+        await fetch(`${API}/api/driver/location`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            driverId,
+            lat:     loc.coords.latitude,
+            lng:     loc.coords.longitude,
+            heading: loc.coords.heading  ?? null,
+            speed:   loc.coords.speed != null ? loc.coords.speed * 3.6 : null,
+            accuracy:loc.coords.accuracy ?? null,
+          }),
+        });
       } catch { /* silently ignore — location is best-effort */ }
     };
 
