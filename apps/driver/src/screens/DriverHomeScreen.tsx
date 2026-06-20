@@ -44,9 +44,10 @@ export default function DriverHomeScreen({ navigation }: any) {
   const [jobs,        setJobs]        = useState<any[]>([]);
   const [loading,     setLoading]     = useState(false);
   const [toggling,    setToggling]    = useState(false);
-  const [accepting,   setAccepting]   = useState<string|null>(null);
-  const [earnings,    setEarnings]    = useState({ today: 0, trips: 0 });
-  const [liveActive,  setLiveActive]  = useState(false);
+  const [accepting,     setAccepting]     = useState<string|null>(null);
+  const [earnings,      setEarnings]      = useState({ today: 0, trips: 0 });
+  const [liveActive,    setLiveActive]    = useState(false);
+  const [assignedJobs,  setAssignedJobs]  = useState<any[]>([]);
   const channelRef = useRef<ReturnType<typeof supabase.channel>|null>(null);
 
   // Load the signed-in driver's profile
@@ -63,12 +64,16 @@ export default function DriverHomeScreen({ navigation }: any) {
   }, [driverId]);
 
   useEffect(() => { loadEarnings(); }, [loadEarnings]);
+  useEffect(() => { fetchAssignedJobs(); }, [fetchAssignedJobs]);
 
-  // Refresh earnings each time the dashboard regains focus (e.g. after a trip)
+  // Refresh on focus
   useEffect(() => {
-    const unsub = navigation.addListener("focus", loadEarnings);
+    const unsub = navigation.addListener("focus", () => {
+      loadEarnings();
+      fetchAssignedJobs();
+    });
     return unsub;
-  }, [navigation, loadEarnings]);
+  }, [navigation, loadEarnings, fetchAssignedJobs]);
 
   // Push GPS location to Supabase every 30s when online
   useEffect(() => {
@@ -94,6 +99,16 @@ export default function DriverHomeScreen({ navigation }: any) {
     const interval = setInterval(pushLocation, 30000);
     return () => clearInterval(interval);
   }, [isOnline, driverId]);
+
+  // Fetch jobs assigned to this driver by admin
+  const fetchAssignedJobs = useCallback(async () => {
+    if (!driverId) return;
+    try {
+      const res  = await fetch(`${API}/api/driver/assigned-jobs?driverId=${driverId}`);
+      const data = await res.json();
+      setAssignedJobs((data.jobs || []).map(mapBookingToJob));
+    } catch { /* keep existing */ }
+  }, [driverId]);
 
   // Fetch pending jobs
   const fetchJobs = useCallback(async () => {
@@ -129,11 +144,19 @@ export default function DriverHomeScreen({ navigation }: any) {
           "postgres_changes",
           { event: "UPDATE", schema: "public", table: "bookings" },
           (payload) => {
-            if (payload.new.status !== "pending") {
-              setJobs(prev => prev.filter(j => j.id !== payload.new.id));
+            const updated = payload.new;
+            // If this booking is now assigned to this driver, add to assigned jobs
+            if (updated.driver_id === driverId && updated.status === "driver_assigned") {
+              fetchAssignedJobs();
+              setJobs(prev => prev.filter(j => j.id !== updated.id));
+            } else if (updated.status !== "pending") {
+              setJobs(prev => prev.filter(j => j.id !== updated.id));
             } else {
-              // Status updated but still pending — refresh the job's data
-              setJobs(prev => prev.map(j => j.id === payload.new.id ? mapBookingToJob(payload.new) : j));
+              setJobs(prev => prev.map(j => j.id === updated.id ? mapBookingToJob(updated) : j));
+            }
+            // If an assigned job status changed away from driver_assigned, refresh
+            if (["en_route","arrived","in_progress","completed","cancelled"].includes(updated.status)) {
+              fetchAssignedJobs();
             }
           }
         )
@@ -166,6 +189,13 @@ export default function DriverHomeScreen({ navigation }: any) {
     const interval = setInterval(fetchJobs, 15000);
     return () => clearInterval(interval);
   }, [isOnline, fetchJobs]);
+
+  // Poll assigned jobs every 20s (admin may assign at any time)
+  useEffect(() => {
+    if (!driverId) return;
+    const interval = setInterval(fetchAssignedJobs, 20000);
+    return () => clearInterval(interval);
+  }, [driverId, fetchAssignedJobs]);
 
   // Toggle online/offline
   const handleToggle = async (val: boolean) => {
@@ -259,6 +289,72 @@ export default function DriverHomeScreen({ navigation }: any) {
             </View>
           ))}
         </View>
+
+        {/* Admin-assigned trips */}
+        {assignedJobs.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <View style={[styles.liveDot, { backgroundColor: colors.gold }]} />
+                <Text style={[styles.sectionTitle, { color: colors.white }]}>Assigned to You</Text>
+              </View>
+              <TouchableOpacity onPress={fetchAssignedJobs}>
+                <Text style={{ color: colors.gold, fontSize:12 }}>Refresh ↻</Text>
+              </TouchableOpacity>
+            </View>
+            {assignedJobs.map(job => (
+              <View key={job.id} style={[styles.jobCard, { backgroundColor: colors.darkSurface, borderColor: `${colors.gold}60`, borderWidth: 1.5 }]}>
+                <View style={styles.jobHeader}>
+                  <View style={{ flexDirection:"row", alignItems:"center", gap:8 }}>
+                    <View style={[styles.jobBadge, { backgroundColor: `${colors.gold}20` }]}>
+                      <Text style={[styles.jobBadgeText, { color: colors.gold }]}>{String(job.id).slice(0,8).toUpperCase()}</Text>
+                    </View>
+                    <View style={{ backgroundColor:`${colors.gold}20`, borderRadius:6, paddingHorizontal:8, paddingVertical:3 }}>
+                      <Text style={{ color: colors.gold, fontSize:10, fontWeight:"700" }}>ASSIGNED</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.jobAmount, { color: colors.gold }]}>${job.amount?.toFixed(2)}</Text>
+                </View>
+
+                <View style={styles.routeRow}>
+                  <View style={styles.routeDots}>
+                    <View style={[styles.dotGreen, { backgroundColor: colors.green }]} />
+                    <View style={[styles.routeLine, { backgroundColor: colors.darkBorder }]} />
+                    <View style={[styles.dotGold, { backgroundColor: colors.gold }]} />
+                  </View>
+                  <View style={styles.routeAddresses}>
+                    <Text style={[styles.routeText, { color: colors.white }]}>{job.pickup}</Text>
+                    <Text style={[styles.routeText, { color: colors.gray500, marginTop:10 }]}>{job.dropoff}</Text>
+                  </View>
+                </View>
+
+                <View style={[styles.jobMeta, { borderTopColor: colors.darkBorder, borderBottomColor: colors.darkBorder }]}>
+                  <Text style={[styles.metaItem, { color: colors.gray400 }]}>{job.scheduledAt ? new Date(job.scheduledAt).toLocaleString("en-AU",{dateStyle:"short",timeStyle:"short"}) : ""}</Text>
+                  <Text style={[styles.metaItem, { color: colors.gray400 }]}>{job.distanceKm} km</Text>
+                  <Text style={[styles.metaItem, { color: colors.gray400 }]}>{job.passengers} pax</Text>
+                  {job.flightNumber ? <Text style={[styles.metaItem, { color: colors.gray400 }]}>Flight {job.flightNumber}</Text> : null}
+                </View>
+
+                <View style={styles.customerRow}>
+                  <View style={[styles.customerAvatar, { backgroundColor: `${colors.gold}20` }]}>
+                    <Text style={[styles.customerAvatarText, { color: colors.gold }]}>{job.customer?.[0]||"C"}</Text>
+                  </View>
+                  <Text style={[styles.customerName, { color: colors.white }]}>{job.customer}</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.acceptBtn, { backgroundColor: colors.gold, flex:1 }, accepting===job.id && { opacity:0.7 }]}
+                  onPress={() => handleAccept(job)}
+                  disabled={accepting === job.id}>
+                  {accepting===job.id
+                    ? <ActivityIndicator color={colors.black} />
+                    : <Text style={[styles.acceptBtnText, { color: colors.black }]}>▶ Start Trip</Text>
+                  }
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Job requests */}
         {isOnline && (

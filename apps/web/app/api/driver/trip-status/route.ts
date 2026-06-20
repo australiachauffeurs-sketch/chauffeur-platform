@@ -42,13 +42,16 @@ export async function POST(req: NextRequest) {
   // Send push notification to customer for key status changes
   if (["en_route", "arrived", "driver_assigned"].includes(status)) {
     const { data: driver } = driverId
-      ? await supabase.from("drivers").select("name").eq("id", driverId).single()
+      ? await supabase.from("drivers").select("first_name, last_name").eq("id", driverId).single()
       : { data: null };
+    const driverName = driver
+      ? [driver.first_name, driver.last_name].filter(Boolean).join(" ")
+      : "Your driver";
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
     fetch(`${baseUrl}/api/notify/customer-eta`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId, status, driverName: driver?.name || "Your driver" }),
+      body: JSON.stringify({ bookingId, status, driverName }),
     }).catch(() => {});
   }
 
