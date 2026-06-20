@@ -52,6 +52,8 @@ export default function LoginScreen({ navigation }: any) {
           name: driverName,
           email: e,
           phone: d.phone,
+          rating: d.rating ?? null,
+          totalTrips: d.total_trips ?? null,
           vehicleMakeModel: [d.vehicle_make, d.vehicle_model].filter(Boolean).join(" ") || null,
           vehiclePlate: d.vehicle_plate,
           vehicleYear: d.vehicle_year,

@@ -188,7 +188,7 @@ export default function ActiveTripScreen({ route, navigation }: any) {
 
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: colors.gold }, SHADOWS.gold, { marginTop: 8 }]}
-            onPress={() => navigation.navigate("DriverHome")}
+            onPress={() => navigation.navigate("Main")}
           >
             <Text style={[styles.actionBtnText, { color: colors.black }]}>Back to Dashboard →</Text>
           </TouchableOpacity>
