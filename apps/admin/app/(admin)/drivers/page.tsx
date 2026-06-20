@@ -61,17 +61,26 @@ export default function DriversPage() {
   const [expiryFields, setExpiryFields] = useState<any>({});
   const [savingExpiry, setSavingExpiry] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res  = await fetch(`/api/admin/drivers?search=${encodeURIComponent(search)}`);
       const data = await res.json();
       setDrivers(data.drivers || []);
+      setLastRefresh(new Date());
     } catch {}
-    finally { setLoading(false); }
+    finally { if (!silent) setLoading(false); }
   }, [search]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Auto-refresh every 20 seconds (silent — no loading spinner)
+  useEffect(() => {
+    const id = setInterval(() => load(true), 20_000);
+    return () => clearInterval(id);
+  }, [load]);
 
   const approve = async (id: string, approved: boolean) => {
     setApproving(id);
@@ -150,7 +159,16 @@ export default function DriversPage() {
           <h1 className="text-[#1C1611] text-xl font-bold">Drivers</h1>
           <p className="text-[#B0A898] text-sm mt-0.5">{approved} approved · {pending} pending approval</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {lastRefresh && (
+            <div className="flex items-center gap-1.5 text-xs text-[#B0A898] mr-1">
+              <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              Live · {lastRefresh.toLocaleTimeString("en-AU", { hour:"2-digit", minute:"2-digit", second:"2-digit" })}
+            </div>
+          )}
+          <button onClick={() => load(true)} className="border border-[#E8E0D0] text-[#7A6F62] hover:text-[#1C1611] hover:border-[#C9A84C]/40 rounded-xl px-3 py-2.5 text-sm transition-colors" title="Refresh now">
+            ↻
+          </button>
           <button onClick={handleCheckDocuments} disabled={checkingDocs} className="border border-[#E8E0D0] text-[#7A6F62] hover:text-[#1C1611] hover:border-[#C9A84C]/40 rounded-xl px-4 py-2.5 text-sm transition-colors disabled:opacity-60">
             {checkingDocs ? "Checking…" : "Check Docs"}
           </button>
@@ -225,7 +243,7 @@ export default function DriversPage() {
               )}
               <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-[#F0EBE2]">
                 <div className="text-center">
-                  <p className="text-[#1C1611] font-bold">{d.rating>0 ? `${d.rating}★` : "—"}</p>
+                  <p className="text-[#1C1611] font-bold">{d.rating > 0 ? `${Number(d.rating).toFixed(1)}★` : "New"}</p>
                   <p className="text-[#B0A898] text-xs">Rating</p>
                 </div>
                 <div className="text-center">
@@ -416,7 +434,7 @@ export default function DriversPage() {
                 ["Phone",       viewing.phone    || "—"],
                 ["City",        viewing.city     || "—"],
                 ["Vehicle",     viewing.vehicle  || viewing.vehicle_type || "—"],
-                ["Rating",      viewing.rating>0 ? `${viewing.rating}★` : "—"],
+                ["Rating",      viewing.rating > 0 ? `${Number(viewing.rating).toFixed(1)}★` : "New"],
                 ["Total Trips", viewing.trips    || 0],
               ].map(([k,v]) => (
                 <div key={k} className="bg-[#FAF8F4] rounded-xl p-3">
