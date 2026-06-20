@@ -132,7 +132,7 @@ export default function DriverHomeScreen({ navigation }: any) {
 
       // Subscribe to bookings table
       const channel = supabase
-        .channel("pending-bookings")
+        .channel(`pending-bookings-${Date.now()}`)
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "bookings", filter: "status=eq.pending" },
